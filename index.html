@@ -14,7 +14,7 @@
     <header class="topbar">
       <div class="brand-mark" aria-hidden="true">MR</div>
       <div class="brand-copy"><p class="eyebrow">JOUW PERSOONLIJKE KOOKBOEK</p><h1>Mijn Recepten</h1></div>
-      <span class="app-version" data-app-version aria-label="Appversie 1.3.1">v1.3.1</span>
+      <span class="app-version" data-app-version aria-label="Appversie 1.4.0">v1.4.0</span>
     </header>
 
     <main>
@@ -58,7 +58,7 @@
       </section>
 
       <section class="view" id="view-backup" aria-labelledby="backupTitle">
-        <div class="page-heading"><div><p class="eyebrow">JOUW GEGEVENS</p><h2 id="backupTitle">Back-up & herstel</h2><p class="muted">Bewaar zelf een kopie in iCloud Drive.</p><p class="helper-text">Appversie <span data-app-version>1.3.1</span></p></div><div class="backup-icon">↥</div></div>
+        <div class="page-heading"><div><p class="eyebrow">JOUW GEGEVENS</p><h2 id="backupTitle">Back-up & herstel</h2><p class="muted">Bewaar zelf een kopie in iCloud Drive.</p><p class="helper-text">Appversie <span data-app-version>1.4.0</span></p></div><div class="backup-icon">↥</div></div>
         <div class="backup-card"><div class="backup-symbol">↓</div><h3>Back-up maken</h3><p>Download je recepten, weekmenu en boodschappen als één JSON-bestand. Sla het bestand daarna op in iCloud Drive via de Bestanden-app.</p><button class="primary-button full-width" id="exportBackup">Download back-upbestand</button></div>
         <div class="backup-card"><div class="backup-symbol">↑</div><h3>Back-up terugzetten</h3><p>Importeer een eerder gemaakt back-upbestand. Je kunt bestaande gegevens vervangen of de recepten samenvoegen.</p><label class="file-button full-width">Kies back-upbestand<input id="importFile" type="file" accept="application/json,.json"></label><div id="importOptions" class="import-options hidden"><p id="importSummary"></p><div class="button-row"><button class="secondary-button" id="mergeImport">Samenvoegen</button><button class="danger-button" id="replaceImport">Alles vervangen</button></div></div></div>
         <div class="backup-card"><div class="backup-symbol">✳</div><h3>Recepten importeren vanuit ChatGPT</h3><p>Vraag ChatGPT om een JSON-receptenbestand voor Mijn Recepten. Kies dat bestand hier. Alleen recepten worden geïmporteerd; je weekmenu en boodschappen blijven ongewijzigd.</p><label class="file-button full-width">Kies receptenbestand (.json)<input id="recipeImportFile" type="file" accept="application/json,.json"></label><div id="recipeImportOptions" class="import-options hidden"><p id="recipeImportSummary"></p><div class="button-row"><button class="secondary-button" id="importNewRecipes">Alleen nieuwe toevoegen</button><button class="primary-button" id="updateImportedRecipes">Importeren / bijwerken</button></div></div><p class="helper-text">Dubbele recepten worden herkend op naam. ‘Alleen nieuwe toevoegen’ slaat bestaande namen over; ‘Importeren / bijwerken’ werkt bestaande recepten met dezelfde naam bij.</p></div>
@@ -80,7 +80,7 @@
       <div class="modal-header"><div><p class="eyebrow">RECEPT BEWERKEN</p><h2 id="recipeDialogTitle">Nieuw recept</h2></div><button type="button" class="icon-button" id="closeRecipe" aria-label="Sluiten">×</button></div>
       <input type="hidden" id="recipeId">
       <label class="field-label">Naam van het gerecht<input id="recipeName" required maxlength="120" placeholder="Bijv. Kip met rijst"></label>
-      <div class="two-columns"><label class="field-label">Categorie<select id="recipeCategory"><option>Avondeten</option><option>Ontbijt</option><option>Lunch</option><option>Mealprep</option><option>Snack</option><option>Overig</option></select></label><label class="field-label">Porties<input id="recipeServings" type="number" min="1" max="100" value="2" required></label></div>
+      <div class="two-columns"><label class="field-label">Categorie<select id="recipeCategory"><option>Avondeten</option><option>Ontbijt</option><option>Lunch</option><option>Mealprep</option><option>Snack</option><option>Kinderen</option><option>Bijgerecht</option><option>Mexicaans</option><option>Rijst &amp; Bowls</option><option>Wraps &amp; Flatbreads</option><option>Pasta</option><option>Salades</option><option>Kip</option><option>Overig</option></select></label><label class="field-label">Porties<input id="recipeServings" type="number" min="1" max="100" value="2" required></label></div>
       <div class="two-columns"><label class="field-label">Voorbereiding (min.)<input id="recipePrep" type="number" min="0" max="999" value="10"></label><label class="field-label">Bereiding (min.)<input id="recipeCook" type="number" min="0" max="999" value="20"></label></div>
       <label class="field-label">Korte omschrijving<textarea id="recipeDescription" rows="2" placeholder="Wat maakt dit gerecht lekker?"></textarea></label>
       <div class="subform-heading"><div><h3>Ingrediënten</h3><p class="muted">Hoeveelheid en eenheid zijn optioneel.</p></div><button type="button" class="small-button" id="addIngredient">＋ Ingrediënt</button></div>

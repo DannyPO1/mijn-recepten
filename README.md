@@ -1,23 +1,14 @@
-# Mijn Recepten — versie 1.3.1
+# Mijn Recepten — versie 1.4.0
 
 **Releasedatum:** 28 oktober 2026
 
 ## Wijzigingen in deze versie
 
-- De gedeelde boodschappenlijst gebruikt geen inspringende spaties meer vóór ingrediëntregels.
-- Ingrediëntregels beginnen nu direct met `- `, zodat de bestaande iOS-Opdracht de regels kan herkennen en als subtaken onder het gerecht kan toevoegen.
-- De appversie en service-worker-cache zijn bijgewerkt naar 1.3.1.
+- Nieuwe categorie **Kinderen** toegevoegd aan de recepteditor en importvalidatie.
+- Herkenbare emoji-iconen toegevoegd aan de categorieën in de receptenfilters en receptkaarten.
+- Categorieën uitgebreid voor Mexicaans, Rijst & Bowls, Wraps & Flatbreads, Pasta, Salades, Kip en Bijgerecht.
+- Service-worker-cache bijgewerkt zodat de nieuwe versie de vernieuwde bestanden ophaalt.
 
-## Formaat voor delen
+## Belangrijk
 
-```text
-Mexicaanse wraps
-- Tomaat — 2 stuks
-- Komkommer — 1 stuk
-
-Kip met rijst
-- Kipfilet — 300 g
-- Rijst — 150 g
-```
-
-De lokale recepten, het weekmenu en de boodschappenlijst blijven behouden bij het bijwerken.
+De bestaande recepten en gegevens blijven lokaal bewaard. Om een bestaand recept naar de categorie **Kinderen** te verplaatsen, importeer je het meegeleverde receptbestand via **Back-up & herstel → Recepten importeren vanuit ChatGPT** en kies je **Importeren / bijwerken**.

@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.3.1';
+  const APP_VERSION = '1.4.0';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -74,7 +74,8 @@
     if (name === 'home') renderHome();
     window.scrollTo({top:0,behavior:'smooth'});
   }
-  function recipeIcon(category) { return ({'Ontbijt':'☀','Lunch':'🥗','Avondeten':'🍲','Mealprep':'▦','Snack':'◉','Overig':'✳'})[category] || '✳'; }
+  function recipeIcon(category) { return ({'Ontbijt':'🥞','Lunch':'🥪','Avondeten':'🍽️','Mealprep':'🥡','Snack':'🍎','Overig':'✨','Kinderen':'🧒','Bijgerecht':'🥕','Mexicaans':'🌮','Rijst & Bowls':'🍚','Wraps & Flatbreads':'🌯','Pasta':'🍝','Salades':'🥗','Kip':'🍗'})[category] || '🍴'; }
+  function categoryLabel(category) { return `${recipeIcon(category)} ${category || 'Overig'}`; }
   function totalMinutes(recipe) { return (Number(recipe.prep)||0) + (Number(recipe.cook)||0); }
   function renderCard(recipe) {
     const ingredientCount = (recipe.ingredients || []).filter(i => i.name && i.name.trim()).length;
@@ -88,7 +89,7 @@
   }
   function renderFilters() {
     const categories = ['Alles',...new Set(state.recipes.map(r=>r.category || 'Overig'))];
-    $('categoryFilters').innerHTML = categories.map(c=>`<button class="filter-chip ${activeCategory===c?'active':''}" data-category="${esc(c)}">${esc(c)}</button>`).join('');
+    $('categoryFilters').innerHTML = categories.map(c=>`<button class="filter-chip ${activeCategory===c?'active':''}" data-category="${esc(c)}">${c==='Alles'?'▦':recipeIcon(c)} ${esc(c)}</button>`).join('');
   }
   function renderRecipes() {
     renderFilters();
@@ -301,7 +302,7 @@
     }).filter(i=>i.name) : [];
     const steps = Array.isArray(raw.steps) ? raw.steps.map(step => typeof step === 'string' ? {id:uid(),text:step.trim()} : {id:step?.id||uid(),text:String(step?.text??step?.instruction??'').trim()}).filter(s=>s.text) : [];
     const now=new Date().toISOString();
-    return {id:raw.id||uid(),name:raw.name.trim(),category:['Ontbijt','Lunch','Avondeten','Mealprep','Snack','Overig'].includes(raw.category)?raw.category:'Overig',servings:Math.max(1,Number(raw.servings)||2),prep:Math.max(0,Number(raw.prep)||0),cook:Math.max(0,Number(raw.cook)||0),description:String(raw.description||''),ingredients,steps,notes:String(raw.notes||''),createdAt:raw.createdAt||now,updatedAt:now};
+    return {id:raw.id||uid(),name:raw.name.trim(),category:['Ontbijt','Lunch','Avondeten','Mealprep','Snack','Overig','Kinderen','Bijgerecht','Mexicaans','Rijst & Bowls','Wraps & Flatbreads','Pasta','Salades','Kip'].includes(raw.category)?raw.category:'Overig',servings:Math.max(1,Number(raw.servings)||2),prep:Math.max(0,Number(raw.prep)||0),cook:Math.max(0,Number(raw.cook)||0),description:String(raw.description||''),ingredients,steps,notes:String(raw.notes||''),createdAt:raw.createdAt||now,updatedAt:now};
   }
   async function handleRecipeImport(file) {
     if(!file)return;
