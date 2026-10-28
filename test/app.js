@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.7.0';
+  const APP_VERSION = '1.7.1';
   const DB_NAME = 'mijn-recepten-test-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -114,7 +114,7 @@
   function renderCard(recipe) {
     const ingredientCount = (recipe.ingredients || []).filter(i => i.name && i.name.trim()).length;
     const photo = recipePhoto(recipe);
-    return `<article class="recipe-card" data-open-recipe="${esc(recipe.id)}" tabindex="0" role="button" aria-label="Open ${esc(recipe.name)}"><div class="recipe-art"><img class="recipe-photo" src="${photo}" alt="" loading="lazy" onerror="this.style.display='none'"><span class="category-pill">${esc(recipe.category || 'Overig')}</span><span>${recipeIcon(recipe.category)}</span></div><div class="recipe-card-body"><h3>${esc(recipe.name)}</h3><p class="recipe-description">${esc(recipe.description || (ingredientCount ? ingredientCount + ' ingrediënten' : 'Recept nog aanvullen'))}</p><div class="recipe-meta"><span>◷ ${totalMinutes(recipe)} min.</span><span>♧ ${Number(recipe.servings)||1} porties</span></div></div></article>`;
+    return `<article class="recipe-card" data-open-recipe="${esc(recipe.id)}" tabindex="0" role="button" aria-label="Open ${esc(recipe.name)}"><div class="recipe-art"><img class="recipe-photo" src="${photo}" alt="" loading="lazy" onerror="this.style.display='none'"><span class="category-pill">${esc(recipe.category || 'Overig')}</span></div><div class="recipe-card-body"><h3>${esc(recipe.name)}</h3><p class="recipe-description">${esc(recipe.description || (ingredientCount ? ingredientCount + ' ingrediënten' : 'Recept nog aanvullen'))}</p><div class="recipe-meta"><span>◷ ${totalMinutes(recipe)} min.</span><span>♧ ${Number(recipe.servings)||1} porties</span></div></div></article>`;
   }
   function renderHome() {
     $('recipeCount').textContent = `${state.recipes.length} ${state.recipes.length === 1 ? 'recept' : 'recepten'}`;
@@ -124,7 +124,7 @@
   }
   function renderFilters() {
     const categories = ['Alles',...new Set(state.recipes.map(r=>r.category || 'Overig'))];
-    $('categoryFilters').innerHTML = categories.map(c=>`<button class="filter-chip ${activeCategory===c?'active':''}" data-category="${esc(c)}">${c==='Alles'?'▦':recipeIcon(c)} ${esc(c)}</button>`).join('');
+    $('categoryFilters').innerHTML = categories.map(c=>`<button class="filter-chip ${activeCategory===c?'active':''}" data-category="${esc(c)}">${esc(c)}</button>`).join('');
   }
   function renderRecipes() {
     renderFilters();

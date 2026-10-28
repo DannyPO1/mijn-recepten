@@ -155,3 +155,93 @@ body{background:var(--bg)}
 .searchbox{border-radius:16px;background:var(--surface);border-color:var(--line)}.filter-chip{border-radius:999px;padding:9px 13px}.filter-chip.active{background:var(--green)}.primary-button,.secondary-button,.small-button,.file-button{border-radius:999px}.view{animation-duration:.22s}.privacy-note{background:#e8ecdf;border:0;border-radius:22px;padding:18px}
 @media(min-width:620px){.recipe-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.hero{min-height:380px;padding:36px}.quick-card{min-height:160px}}
 @media(max-width:420px){.app-shell{padding-left:15px;padding-right:15px}.hero{min-height:310px;padding:22px 20px}.hero h2{font-size:39px}.quick-card{min-height:140px;padding:15px}.recipe-card-body{padding:13px}.recipe-card-body h3{font-size:17px}}
+
+
+/* v1.7.1 — visuele kookboektegels en boodschappenbanner */
+.quick-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  justify-content: flex-end;
+  min-height: 158px;
+  padding: 16px;
+  border: 0;
+  border-radius: 22px;
+  color: #fffdf7;
+  background-color: #53634f;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 8px 24px rgba(42,53,40,.12);
+}
+.quick-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(0deg, rgba(25,42,30,.83) 0%, rgba(25,42,30,.23) 75%, rgba(25,42,30,.05) 100%);
+  transition: opacity .2s ease;
+}
+.quick-card:active { transform: scale(.985); }
+.quick-card-recipes {
+  background-image: url("https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=82");
+}
+.quick-card-week {
+  background-image: url("https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=82");
+}
+.quick-card-shopping {
+  background-image: url("https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=82");
+}
+.quick-card-backup {
+  background-image: url("https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=900&q=82");
+}
+.quick-card .quick-icon { display: none; }
+.quick-card-copy { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.quick-card strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px;
+  letter-spacing: -.025em;
+  line-height: 1.1;
+  color: #fffdf7;
+}
+.quick-card small { color: rgba(255,253,247,.88); font-size: 12px; font-weight: 550; }
+.recipe-art > span:not(.category-pill) { display: none !important; }
+.recipe-art { display: block; overflow: hidden; }
+.recipe-photo { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shopping-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  min-height: 190px;
+  margin: 4px 0 24px;
+  padding: 23px 21px;
+  border-radius: 27px;
+  overflow: hidden;
+  color: #fffdf7;
+  background-color: #4e614c;
+  background-image: url("https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=85");
+  background-position: center 48%;
+  background-size: cover;
+  box-shadow: var(--shadow);
+}
+.shopping-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(0deg, rgba(24,42,29,.86), rgba(24,42,29,.12));
+}
+.shopping-hero > div { max-width: 440px; }
+.shopping-hero .eyebrow { color: #f0d7b7; }
+.shopping-hero h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(32px, 7vw, 43px);
+  line-height: 1;
+  margin: 0 0 8px;
+}
+.shopping-hero p:last-child { margin: 0; color: rgba(255,253,247,.9); font-size: 14px; }
+@media (max-width: 420px) {
+  .quick-card { min-height: 145px; padding: 14px; }
+  .quick-card strong { font-size: 18px; }
+  .shopping-hero { min-height: 180px; padding: 20px; }
+}
