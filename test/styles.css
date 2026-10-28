@@ -276,3 +276,21 @@ html[data-theme="dark"] .shopping-hero {
   background-position: center 48% !important;
   background-size: cover !important;
 }
+
+
+/* v1.7.3 — keep image crop and framing identical in light and dark themes */
+html[data-theme="dark"] .quick-card,
+html[data-theme="dark"] .quick-card-recipes,
+html[data-theme="dark"] .quick-card-week,
+html[data-theme="dark"] .quick-card-shopping,
+html[data-theme="dark"] .quick-card-backup {
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+html[data-theme="dark"] .hero,
+html[data-theme="dark"] .shopping-hero {
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
