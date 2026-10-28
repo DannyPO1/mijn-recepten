@@ -1,5 +1,5 @@
-const CACHE_NAME = 'mijn-recepten-v1.5.4';
-const APP_SHELL = ['./', './index.html', './styles.css?v=1.5.4', './app.js?v=1.5.4', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png'];
+const CACHE_NAME = 'mijn-recepten-v1.5.5';
+const APP_SHELL = ['./', './index.html', './styles.css?v=1.5.5', './app.js?v=1.5.5', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
