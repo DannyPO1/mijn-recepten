@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.4.0';
+  const APP_VERSION = '1.5.0';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -65,6 +65,28 @@
     const el = $('toast'); el.textContent = message; el.classList.add('show');
     clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
   }
+  const THEME_KEY = 'mijn-recepten-theme';
+  function applyTheme(theme, announce=false) {
+    const chosen = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = chosen;
+    try { localStorage.setItem(THEME_KEY, chosen); } catch (_) {}
+    const button = $('themeToggle');
+    const icon = $('themeToggleIcon');
+    const meta = $('themeColorMeta');
+    if (button) {
+      button.setAttribute('aria-label', chosen === 'dark' ? 'Lichte modus inschakelen' : 'Donkere modus inschakelen');
+      button.setAttribute('title', chosen === 'dark' ? 'Lichte modus inschakelen' : 'Donkere modus inschakelen');
+    }
+    if (icon) icon.textContent = chosen === 'dark' ? '☀' : '☾';
+    if (meta) meta.setAttribute('content', chosen === 'dark' ? '#171a17' : '#f7f5ef');
+    if (announce) showToast(chosen === 'dark' ? 'Donkere modus ingeschakeld' : 'Lichte modus ingeschakeld');
+  }
+  function initTheme() {
+    let saved = 'light';
+    try { saved = localStorage.getItem(THEME_KEY) || 'light'; } catch (_) {}
+    applyTheme(saved);
+  }
+
   function navigate(name) {
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.nav === name));
@@ -346,6 +368,7 @@
   function bindEvents() {
     document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.nav)));
     $('exportBackup').addEventListener('click',makeBackup);
+    $('themeToggle').addEventListener('click',()=>applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
     $('addRecipeTop').addEventListener('click',()=>openRecipeEditor());$('addRecipeEmpty').addEventListener('click',()=>openRecipeEditor());
     $('closeRecipe').addEventListener('click',()=> $('recipeDialog').close());$('cancelRecipe').addEventListener('click',()=> $('recipeDialog').close());$('recipeForm').addEventListener('submit',saveRecipe);
     $('addIngredient').addEventListener('click',()=>addIngredientRow());$('addStep').addEventListener('click',()=>{addStepRow();renumberSteps();});
@@ -369,6 +392,7 @@
     state.shopping.push({id:uid(),name,qty:null,unit:'',checked:false,group:guessGroup(name),sources:['Handmatig'],note:''});input.value='';await persist();renderShopping();renderHome();showToast('Artikel toegevoegd');
   }
   async function init() {
+    initTheme();
     bindEvents();
     try {await openDB();state=await readState();if(!state){state=defaultState();await persist();}}
     catch(err){console.error(err);showToast('Lokale opslag is niet beschikbaar. Probeer Safari en controleer de website-instellingen.');state=defaultState();}

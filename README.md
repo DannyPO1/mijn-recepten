@@ -1,14 +1,16 @@
-# Mijn Recepten — versie 1.4.0
+# Mijn Recepten — versie 1.5.0
 
 **Releasedatum:** 28 oktober 2026
 
 ## Wijzigingen in deze versie
 
-- Nieuwe categorie **Kinderen** toegevoegd aan de recepteditor en importvalidatie.
-- Herkenbare emoji-iconen toegevoegd aan de categorieën in de receptenfilters en receptkaarten.
-- Categorieën uitgebreid voor Mexicaans, Rijst & Bowls, Wraps & Flatbreads, Pasta, Salades, Kip en Bijgerecht.
-- Service-worker-cache bijgewerkt zodat de nieuwe versie de vernieuwde bestanden ophaalt.
+- Nieuw app-icoon met kookboek, koksmuts en pan toegepast in de appheader.
+- PWA-iconen toegevoegd voor installatie en beginscherm op iPhone (Apple Touch Icon) en voor browsers.
+- Schakelaar rechtsboven toegevoegd om te wisselen tussen lichte en donkere modus.
+- De gekozen weergave wordt op het apparaat onthouden, ook na het sluiten en opnieuw openen van de app.
+- Donkere modus-stijlen toegevoegd voor navigatie, kaarten, formulieren, dialoogvensters en boodschappenlijst.
+- Service-worker-cache bijgewerkt om de nieuwe bestanden en iconen op te halen.
 
-## Belangrijk
+## Gegevens
 
-De bestaande recepten en gegevens blijven lokaal bewaard. Om een bestaand recept naar de categorie **Kinderen** te verplaatsen, importeer je het meegeleverde receptbestand via **Back-up & herstel → Recepten importeren vanuit ChatGPT** en kies je **Importeren / bijwerken**.
+De bestaande recepten, weekmenu's en boodschappen worden niet aangepast. De themavoorkeur wordt apart op het apparaat bewaard.
