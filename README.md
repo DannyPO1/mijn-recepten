@@ -1,13 +1,14 @@
-# Mijn Recepten — versie 1.2.1
+# Mijn Recepten — versie 1.2.2
 
 **Releasedatum:** 28 oktober 2026
 
 ## Wijzigingen in deze versie
 
-- De knop voor het direct maken van een back-up is verwijderd uit de bovenbalk van de homepage. Back-ups maken blijft beschikbaar op de pagina **Back-up & herstel**.
-- De actuele appversie wordt voortaan subtiel rechtsboven op de homepage getoond.
-- De versie op de pagina **Back-up & herstel** blijft beschikbaar en wordt vanuit dezelfde versieconstante gevuld.
-- De service-worker-cache is bijgewerkt naar `mijn-recepten-v1.2.1`, zodat de browser de nieuwe bestanden opnieuw kan laden.
+- Bij het openen van de app wordt actief gecontroleerd of er een nieuwe service-worker beschikbaar is.
+- Als een nieuwe service-worker klaarstaat, wordt deze geactiveerd en wordt de app automatisch opnieuw geladen.
+- Bij terugkeer naar de app wordt opnieuw gecontroleerd op updates, zodat de snelkoppeling op het iPhone-beginscherm sneller de nieuwste versie ophaalt.
+- De service worker haalt de appbestanden opnieuw op bij installatie van een nieuwe cacheversie en probeert de actuele startpagina via het netwerk te laden. Bij offlinegebruik blijft de gecachte app beschikbaar.
+- Recepten, weekmenu en boodschappen blijven in lokale IndexedDB-opslag staan; de update verwijdert die gegevens niet.
 
 ## Recepten importeren vanuit ChatGPT
 
@@ -15,4 +16,4 @@ Op **Back-up & herstel** kun je een JSON-bestand met recepten importeren. Je kun
 
 ## Opslag en back-up
 
-Recepten, weekmenu en boodschappen worden lokaal in de browser opgeslagen. Deze gegevens synchroniseren niet automatisch met iCloud. Maak op de pagina **Back-up & herstel** regelmatig een back-up en bewaar het JSON-bestand op een veilige plek, bijvoorbeeld in iCloud Drive.
+Recepten, weekmenu en boodschappen worden lokaal in de browser opgeslagen. Deze gegevens synchroniseren niet automatisch met iCloud. Maak regelmatig een back-up en bewaar het JSON-bestand op een veilige plek, bijvoorbeeld in iCloud Drive.

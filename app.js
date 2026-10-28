@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.2.1';
+  const APP_VERSION = '1.2.2';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -336,7 +336,22 @@
     catch(err){console.error(err);showToast('Lokale opslag is niet beschikbaar. Probeer Safari en controleer de website-instellingen.');state=defaultState();}
     state.recipes=Array.isArray(state.recipes)?state.recipes:[];state.week=state.week||{};state.shopping=Array.isArray(state.shopping)?state.shopping:[];
     renderAll();
-    if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Service worker niet geregistreerd',err));
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      let reloadingForUpdate = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloadingForUpdate) return;
+        reloadingForUpdate = true;
+        window.location.reload();
+      });
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+        .then(registration => registration.update())
+        .catch(err => console.warn('Service worker niet geregistreerd', err));
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          navigator.serviceWorker.getRegistration('./').then(registration => registration?.update()).catch(() => {});
+        }
+      });
+    }
   }
   init();
 })();
