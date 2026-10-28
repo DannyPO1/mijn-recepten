@@ -1,13 +1,8 @@
-# Mijn Recepten — versie 1.5.1
-
-**Releasedatum:** 28 oktober 2026
+# Mijn Recepten — v1.5.2
 
 ## Wijzigingen in deze versie
-
-- Service-worker-cacheversie verhoogd naar v1.5.1, zodat de browser de nieuwste appbestanden opnieuw ophaalt.
-- Appversie bijgewerkt naar v1.5.1 in de interface en de appcode.
-- Updatecontrole via de bestaande service worker behouden.
-
-## Gegevens
-
-Deze update wijzigt de receptendatabase niet en wist geen IndexedDB-gegevens. Zet je JSON-back-up pas terug nadat de nieuwe versie geopend is en controleer daarna of je recepten correct zijn hersteld.
+- Structurele cache-aanpassing: de service worker haalt HTML, JavaScript, CSS en andere lokale bestanden online eerst op van het netwerk.
+- De cache wordt bijgewerkt na een succesvolle netwerkrespons en wordt alleen gebruikt als terugval bij verbindingsproblemen.
+- De service-worker-URL bevat het versienummer, zodat de browser de nieuwe worker expliciet registreert.
+- De cache is opnieuw versienummerd; bij activatie worden oude caches van Mijn Recepten verwijderd.
+- De IndexedDB-opslag met recepten, weekmenu en boodschappenlijst blijft onaangeroerd.
