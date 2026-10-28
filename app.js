@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.3.0';
+  const APP_VERSION = '1.3.1';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -258,7 +258,7 @@
         } else ingredients.set(key,{name:item.name,qty:qty===undefined?null:qty,unit});
       });
     });
-    return [...byRecipe.entries()].map(([recipe,ingredients])=>[recipe,...[...ingredients.values()].map(i=>`  - ${i.name}${i.qty!==null&&i.qty!==undefined?' — '+formatQty(i.qty)+(i.unit?' '+i.unit:''):i.unit?' — '+i.unit:''}`)].join('\n')).join('\n\n');
+    return [...byRecipe.entries()].map(([recipe,ingredients])=>[recipe,...[...ingredients.values()].map(i=>`- ${i.name}${i.qty!==null&&i.qty!==undefined?' — '+formatQty(i.qty)+(i.unit?' '+i.unit:''):i.unit?' — '+i.unit:''}`)].join('\n')).join('\n\n');
   }
   async function shareShopping() {
     const text=shoppingText();if(!text){showToast('Geen openstaande boodschappen om te delen.');return;}
