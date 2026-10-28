@@ -22,6 +22,7 @@
   let state = null;
   let activeCategory = 'Alles';
   let pendingImport = null;
+  let pendingRecipeImport = null;
   let toastTimer = null;
 
   function openDB() {
@@ -253,6 +254,47 @@
     catch(err){pendingImport=null;$('importOptions').classList.add('hidden');showToast(err.message||'Dit bestand kan niet worden gelezen.');}
     $('importFile').value='';
   }
+  function normalizeImportedRecipe(raw) {
+    if(!raw || typeof raw.name !== 'string' || !raw.name.trim()) throw new Error('Elk recept moet een naam hebben.');
+    const ingredients = Array.isArray(raw.ingredients) ? raw.ingredients.map(item => {
+      if(typeof item === 'string') return {id:uid(),name:item.trim(),qty:'',unit:'',optional:false};
+      if(!item || typeof item.name !== 'string' || !item.name.trim()) throw new Error(`Ongeldig ingrediënt in recept “${raw.name}”.`);
+      return {id:item.id||uid(),name:item.name.trim(),qty:item.qty===null?'':String(item.qty??''),unit:String(item.unit??''),optional:Boolean(item.optional)};
+    }).filter(i=>i.name) : [];
+    const steps = Array.isArray(raw.steps) ? raw.steps.map(step => typeof step === 'string' ? {id:uid(),text:step.trim()} : {id:step?.id||uid(),text:String(step?.text??step?.instruction??'').trim()}).filter(s=>s.text) : [];
+    const now=new Date().toISOString();
+    return {id:raw.id||uid(),name:raw.name.trim(),category:['Ontbijt','Lunch','Avondeten','Mealprep','Snack','Overig'].includes(raw.category)?raw.category:'Overig',servings:Math.max(1,Number(raw.servings)||2),prep:Math.max(0,Number(raw.prep)||0),cook:Math.max(0,Number(raw.cook)||0),description:String(raw.description||''),ingredients,steps,notes:String(raw.notes||''),createdAt:raw.createdAt||now,updatedAt:now};
+  }
+  async function handleRecipeImport(file) {
+    if(!file)return;
+    try {
+      const parsed=JSON.parse(await file.text());
+      const rawRecipes=Array.isArray(parsed)?parsed:(Array.isArray(parsed?.recipes)?parsed.recipes:(Array.isArray(parsed?.data?.recipes)?parsed.data.recipes:null));
+      if(!rawRecipes) throw new Error('Geen recepten gevonden. Gebruik een JSON-bestand met een recipes-lijst.');
+      if(!rawRecipes.length) throw new Error('Het bestand bevat nog geen recepten.');
+      pendingRecipeImport=rawRecipes.map(normalizeImportedRecipe);
+      const existingNames=new Set(state.recipes.map(r=>normalizeName(r.name)));
+      const newCount=pendingRecipeImport.filter(r=>!existingNames.has(normalizeName(r.name))).length;
+      const duplicateCount=pendingRecipeImport.length-newCount;
+      $('recipeImportSummary').textContent=`${pendingRecipeImport.length} recepten gevonden: ${newCount} nieuw en ${duplicateCount} met een naam die al bestaat. Voorbeeld: ${pendingRecipeImport.slice(0,5).map(r=>r.name).join(', ')}${pendingRecipeImport.length>5?'…':''}.`;
+      $('recipeImportOptions').classList.remove('hidden');
+      showToast('Receptenbestand gecontroleerd. Kies hoe je wilt importeren.');
+    } catch(err) {pendingRecipeImport=null;$('recipeImportOptions').classList.add('hidden');showToast(err.message||'Dit receptenbestand kan niet worden gelezen.');}
+    $('recipeImportFile').value='';
+  }
+  async function doRecipeImport(updateExisting) {
+    if(!pendingRecipeImport?.length)return;
+    const before=state.recipes.length;let added=0,updated=0,skipped=0;
+    for(const imported of pendingRecipeImport) {
+      const index=state.recipes.findIndex(r=>normalizeName(r.name)===normalizeName(imported.name));
+      if(index<0) {state.recipes.unshift({...imported,id:uid()});added++;}
+      else if(updateExisting) {state.recipes[index]={...state.recipes[index],...imported,id:state.recipes[index].id,createdAt:state.recipes[index].createdAt||imported.createdAt};updated++;}
+      else skipped++;
+    }
+    pendingRecipeImport=null;$('recipeImportOptions').classList.add('hidden');
+    await persist();renderAll();
+    showToast(`Import klaar: ${added} toegevoegd, ${updated} bijgewerkt, ${skipped} overgeslagen.`);
+  }
   async function doImport(mode) {
     if(!pendingImport)return;
     if(mode==='replace'&&!confirm('Dit vervangt alle huidige recepten, weekmenu-items en boodschappen. Maak eerst een back-up als je de huidige gegevens wilt bewaren. Doorgaan?'))return;
@@ -278,6 +320,7 @@
     $('shoppingItems').addEventListener('click',async e=>{const b=e.target.closest('[data-delete-item]');if(!b)return;state.shopping=state.shopping.filter(i=>i.id!==b.dataset.deleteItem);await persist();renderShopping();renderHome();});
     $('addManualItem').addEventListener('click',addManualShopping);$('manualItem').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addManualShopping();}});$('shareShopping').addEventListener('click',shareShopping);
     $('importFile').addEventListener('change',e=>handleImport(e.target.files?.[0]));$('mergeImport').addEventListener('click',()=>doImport('merge'));$('replaceImport').addEventListener('click',()=>doImport('replace'));
+    $('recipeImportFile').addEventListener('change',e=>handleRecipeImport(e.target.files?.[0]));$('importNewRecipes').addEventListener('click',()=>doRecipeImport(false));$('updateImportedRecipes').addEventListener('click',()=>doRecipeImport(true));
     document.addEventListener('keydown',e=>{if(e.key==='Escape')return;const card=e.target.closest?.('[data-open-recipe]');if(card&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openRecipeDetail(card.dataset.openRecipe);}});
   }
   async function addManualShopping() {
