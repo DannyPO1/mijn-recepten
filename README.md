@@ -1,19 +1,31 @@
-# Mijn Recepten — versie 1.2.2
+# Mijn Recepten — versie 1.3.0
 
 **Releasedatum:** 28 oktober 2026
 
 ## Wijzigingen in deze versie
 
-- Bij het openen van de app wordt actief gecontroleerd of er een nieuwe service-worker beschikbaar is.
-- Als een nieuwe service-worker klaarstaat, wordt deze geactiveerd en wordt de app automatisch opnieuw geladen.
-- Bij terugkeer naar de app wordt opnieuw gecontroleerd op updates, zodat de snelkoppeling op het iPhone-beginscherm sneller de nieuwste versie ophaalt.
-- De service worker haalt de appbestanden opnieuw op bij installatie van een nieuwe cacheversie en probeert de actuele startpagina via het netwerk te laden. Bij offlinegebruik blijft de gecachte app beschikbaar.
-- Recepten, weekmenu en boodschappen blijven in lokale IndexedDB-opslag staan; de update verwijdert die gegevens niet.
+- De tekst die via het deelmenu naar de iOS-Opdracht wordt gestuurd, is nu gegroepeerd per gerecht.
+- De naam van het gerecht staat op een eigen regel; ingrediënten staan eronder met inspringing en een streepje.
+- Hoeveelheden per gerecht worden apart bijgehouden voor nieuw gegenereerde boodschappen, ook als hetzelfde ingrediënt in meerdere recepten voorkomt.
+- Handmatig toegevoegde of oudere boodschappen waarvan de herkomst niet meer betrouwbaar is, worden onder **Overige boodschappen** gezet in plaats van een onjuiste hoeveelheid aan een gerecht toe te wijzen.
+- De service-worker-cache is bijgewerkt naar versie 1.3.0.
 
-## Recepten importeren vanuit ChatGPT
+## Formaat voor delen
 
-Op **Back-up & herstel** kun je een JSON-bestand met recepten importeren. Je kunt alleen nieuwe recepten toevoegen of bestaande recepten met dezelfde naam bijwerken. Deze import verandert het weekmenu en de boodschappenlijst niet.
+De gedeelde tekst gebruikt deze structuur:
 
-## Opslag en back-up
+```text
+Mexicaanse wraps
+  - Tomaat — 2 stuks
+  - Komkommer — 1 stuk
 
-Recepten, weekmenu en boodschappen worden lokaal in de browser opgeslagen. Deze gegevens synchroniseren niet automatisch met iCloud. Maak regelmatig een back-up en bewaar het JSON-bestand op een veilige plek, bijvoorbeeld in iCloud Drive.
+Kip met rijst
+  - Kipfilet — 300 g
+  - Rijst — 150 g
+```
+
+De bestaande iOS-Opdracht moet deze indeling interpreteren om echte hoofdherinneringen met subtaken te maken. Als de Opdracht nog iedere tekstregel als een losse herinnering aanmaakt, wordt de tekst wel ingesprongen gedeeld maar ontstaat er nog geen hiërarchie in Apple Herinneringen.
+
+## Opslag
+
+Recepten, weekmenu en boodschappen worden lokaal in de browser opgeslagen. De app verwijdert deze gegevens niet bij een update.

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mijn-recepten-v1.2.2';
+const CACHE_NAME = 'mijn-recepten-v1.3.0';
 const APP_SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest'];
 
 self.addEventListener('install', event => {

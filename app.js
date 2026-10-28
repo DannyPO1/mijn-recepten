@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.2.2';
+  const APP_VERSION = '1.3.0';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -183,9 +183,13 @@
       (r.ingredients||[]).forEach(ing=>{
         if(!ing.name?.trim())return;
         const qty=parseQty(ing.qty); const unit=ing.unit||''; const name=ing.name.trim();
+        const sourceDetail={recipeName:r.name,qty:qty===null?null:qty*ratio,unit};
         const existing=items.find(i=>normalizeName(i.name)===normalizeName(name) && (unitKey(i.unit)===unitKey(unit)||canConvert(i.unit,unit)) && i.qty!==null && qty!==null);
-        if(existing){const add=convertQty(qty*ratio,unit,existing.unit);existing.qty+=add;existing.sources.push(r.name);}
-        else items.push({id:uid(),name,qty:qty===null?null:qty*ratio,unit,checked:false,group:guessGroup(name),sources:[r.name],note:qty===null?'Hoeveelheid naar smaak of niet opgegeven':''});
+        if(existing){
+          const add=convertQty(qty*ratio,unit,existing.unit);existing.qty+=add;
+          existing.sources=[...new Set([...(existing.sources||[]),r.name])];
+          existing.sourceDetails.push({...sourceDetail,qty:qty===null?null:convertQty(qty*ratio,unit,existing.unit),unit:existing.unit});
+        } else items.push({id:uid(),name,qty:qty===null?null:qty*ratio,unit,checked:false,group:guessGroup(name),sources:[r.name],sourceDetails:[sourceDetail],note:qty===null?'Hoeveelheid naar smaak of niet opgegeven':''});
       });
     });
     return items.map(i=>({...i,displayQty:i.qty===null?'':formatQty(i.qty)}));
@@ -198,12 +202,25 @@
     if(/melk|yoghurt|kaas|room|boter/.test(n))return 'Zuivel';
     return 'Overig';
   }
+  function seedLegacySourceDetails(item) {
+    if(Array.isArray(item.sourceDetails) && item.sourceDetails.length)return item.sourceDetails;
+    // Older shopping entries did not retain quantities per recipe. Keep their total under a neutral heading rather than inventing per-recipe quantities.
+    item.sourceDetails=[{recipeName:'Overige boodschappen',qty:item.qty??null,unit:item.unit||''}];
+    return item.sourceDetails;
+  }
+  function appendSourceDetails(target, incoming) {
+    const details=seedLegacySourceDetails(target);
+    const additions=Array.isArray(incoming.sourceDetails)&&incoming.sourceDetails.length?incoming.sourceDetails:[{recipeName:'Overige boodschappen',qty:incoming.qty??null,unit:incoming.unit||''}];
+    target.sourceDetails=[...details,...additions];
+  }
   async function createWeekShopping() {
     const generated=buildShoppingFromWeek(); if(!generated.length){showToast('Er zijn geen ingrediënten in je weekmenu gevonden.');return;}
     const existing=state.shopping; generated.forEach(g=>{
       const found=existing.find(x=>normalizeName(x.name)===normalizeName(g.name)&&unitKey(x.unit)===unitKey(g.unit));
-      if(found && found.qty!==null && g.qty!==null){found.qty+=g.qty;found.sources=[...new Set([...(found.sources||[]),...(g.sources||[])])];}
-      else if(!found)existing.push(g);
+      if(found && found.qty!==null && g.qty!==null){
+        appendSourceDetails(found,g);
+        found.qty+=g.qty;found.sources=[...new Set([...(found.sources||[]),...(g.sources||[])])];
+      } else if(!found)existing.push(g);
     });
     state.shopping=existing;await persist();renderShopping();renderHome();navigate('shopping');showToast('Boodschappen uit weekmenu toegevoegd');
   }
@@ -211,9 +228,10 @@
     const ratio=(Number(targetServings)||recipe.servings||1)/(Number(recipe.servings)||1);
     (recipe.ingredients||[]).filter(i=>i.name?.trim()).forEach(ing=>{
       const qty=parseQty(ing.qty);const unit=ing.unit||'';const name=ing.name.trim();
+      const detail={recipeName:recipe.name,qty:qty===null?null:qty*ratio,unit};
       const found=state.shopping.find(x=>normalizeName(x.name)===normalizeName(name)&&unitKey(x.unit)===unitKey(unit)&&x.qty!==null&&qty!==null);
-      if(found){found.qty+=qty*ratio;found.sources=[...new Set([...(found.sources||[]),recipe.name])];}
-      else state.shopping.push({id:uid(),name,qty:qty===null?null:qty*ratio,unit,checked:false,group:guessGroup(name),sources:[recipe.name],note:''});
+      if(found){appendSourceDetails(found,{sourceDetails:[detail],qty:detail.qty,unit});found.qty+=qty*ratio;found.sources=[...new Set([...(found.sources||[]),recipe.name])];}
+      else state.shopping.push({id:uid(),name,qty:qty===null?null:qty*ratio,unit,checked:false,group:guessGroup(name),sources:[recipe.name],sourceDetails:[detail],note:''});
     });
   }
   function renderShopping() {
@@ -222,7 +240,26 @@
     $('shoppingItems').innerHTML=state.shopping.length?keys.map(group=>`<div class="shopping-group"><h3>${esc(group)}</h3>${groups[group].map(i=>`<label class="shopping-item ${i.checked?'done':''}"><input type="checkbox" data-check-item="${esc(i.id)}" ${i.checked?'checked':''}><span class="item-name">${esc(i.name)}</span><span class="item-qty">${esc([i.qty===null?'':formatQty(i.qty),i.unit].filter(Boolean).join(' '))}</span><button type="button" data-delete-item="${esc(i.id)}" aria-label="Verwijder ${esc(i.name)}">×</button></label>`).join('')}</div>`).join(''):`<div class="empty-state"><div class="empty-icon">☷</div><h3>Je lijst is nog leeg</h3><p>Voeg een artikel toe of genereer boodschappen vanuit je weekmenu.</p><button class="secondary-button" data-nav="week">Naar weekmenu</button></div>`;
     $('shoppingTotal').textContent=state.shopping.length;$('shoppingDone').textContent=state.shopping.filter(i=>i.checked).length;
   }
-  function shoppingText() { return state.shopping.filter(i=>!i.checked).map(i=>`${i.name}${i.qty!==null&&i.qty!==undefined?' — '+formatQty(i.qty)+(i.unit?' '+i.unit:''):i.unit?' — '+i.unit:''}`).join('\n'); }
+  function shoppingText() {
+    const byRecipe=new Map();
+    state.shopping.filter(i=>!i.checked).forEach(item=>{
+      const details=Array.isArray(item.sourceDetails)&&item.sourceDetails.length?item.sourceDetails:seedLegacySourceDetails(item);
+      details.forEach(detail=>{
+        const recipeName=(detail.recipeName||'Overige boodschappen').trim()||'Overige boodschappen';
+        if(!byRecipe.has(recipeName))byRecipe.set(recipeName,new Map());
+        const ingredients=byRecipe.get(recipeName);
+        const key=normalizeName(item.name)+'|'+unitKey(detail.unit||item.unit||'');
+        const qty=detail.qty===undefined?item.qty:detail.qty;
+        const unit=detail.unit||item.unit||'';
+        if(ingredients.has(key)){
+          const old=ingredients.get(key);
+          if(old.qty!==null&&qty!==null&&unitKey(old.unit)===unitKey(unit))old.qty+=qty;
+          else if(old.qty===null&&qty!==null){old.qty=qty;old.unit=unit;}
+        } else ingredients.set(key,{name:item.name,qty:qty===undefined?null:qty,unit});
+      });
+    });
+    return [...byRecipe.entries()].map(([recipe,ingredients])=>[recipe,...[...ingredients.values()].map(i=>`  - ${i.name}${i.qty!==null&&i.qty!==undefined?' — '+formatQty(i.qty)+(i.unit?' '+i.unit:''):i.unit?' — '+i.unit:''}`)].join('\n')).join('\n\n');
+  }
   async function shareShopping() {
     const text=shoppingText();if(!text){showToast('Geen openstaande boodschappen om te delen.');return;}
     if(navigator.share){try{await navigator.share({title:'Boodschappen — Mijn Recepten',text});showToast('Deelmenu geopend');return;}catch(err){if(err?.name==='AbortError')return;}}
