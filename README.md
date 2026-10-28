@@ -1,9 +1,9 @@
-# Mijn Recepten — v1.6.0
+# Mijn Recepten — v1.7.0
 
 ## Wijzigingen in deze versie
 - JavaScript en CSS worden met een expliciet versienummer geladen om verouderde browsercache te omzeilen.
-- De service-worker-URL en cache zijn bijgewerkt naar v1.6.0, zodat Safari een nieuwe worker kan detecteren.
-- De versieweergave is overal gelijkgetrokken naar v1.6.0.
+- De service-worker-URL en cache zijn bijgewerkt naar v1.7.0, zodat Safari een nieuwe worker kan detecteren.
+- De versieweergave is overal gelijkgetrokken naar v1.7.0.
 - De bestaande IndexedDB-opslag met recepten, weekmenu en boodschappenlijst wordt niet aangepast.
 
 ## Belangrijk
