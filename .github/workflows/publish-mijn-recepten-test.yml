@@ -1,0 +1,172 @@
+
+name: Publish Mijn Recepten testapp
+
+on:
+  push:
+    branches:
+      - feature/nieuw-ontwerp
+    paths:
+      - 'MijnRecepten-iPhone-v*.zip'
+      - '.github/workflows/publish-mijn-recepten-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-mijn-recepten-test
+  cancel-in-progress: false
+
+jobs:
+  publish-test:
+    if: github.ref == 'refs/heads/feature/nieuw-ontwerp'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout design branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/nieuw-ontwerp
+          path: source
+          fetch-depth: 0
+
+      - name: Select and extract ZIP
+        id: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd source
+          shopt -s nullglob
+          zips=(MijnRecepten-iPhone-v*.zip)
+          if [[ ${#zips[@]} -eq 0 ]]; then
+            echo "No version ZIP found."
+            exit 1
+          fi
+
+          zipfile="$(printf '%s\n' "${zips[@]}" | grep -E '^MijnRecepten-iPhone-v[0-9]+\.[0-9]+\.[0-9]+\.zip$' | sort -V | tail -n 1 || true)"
+          if [[ -z "$zipfile" ]]; then
+            echo "Invalid ZIP filename."
+            exit 1
+          fi
+
+          version="${zipfile#MijnRecepten-iPhone-v}"
+          version="${version%.zip}"
+          mkdir -p ../extract
+          unzip -q "$zipfile" -d ../extract
+          cd ..
+
+          if [[ -f extract/index.html ]]; then
+            src="extract"
+          else
+            mapfile -t candidates < <(find extract -mindepth 2 -maxdepth 3 -type f -name index.html)
+            if [[ ${#candidates[@]} -ne 1 ]]; then
+              echo "ZIP must contain one index.html."
+              exit 1
+            fi
+            src="$(dirname "${candidates[0]}")"
+          fi
+
+          for file in index.html styles.css app.js manifest.webmanifest sw.js; do
+            test -f "$src/$file" || { echo "Missing $file"; exit 1; }
+          done
+
+          for file in icons/icon-192.png icons/icon-512.png icons/apple-touch-icon.png icons/favicon.png; do
+            test -f "$src/$file" || { echo "Missing $file"; exit 1; }
+          done
+
+          mkdir -p test
+          cp "$src/index.html" "$src/styles.css" "$src/app.js" "$src/manifest.webmanifest" "$src/sw.js" test/
+          cp -R "$src/icons" test/icons
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Isolate test app storage and cache
+        shell: bash
+        env:
+          VERSION: ${{ steps.app.outputs.version }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, re
+
+          version = os.environ["VERSION"]
+          root = Path("test")
+
+          p = root / "index.html"
+          s = p.read_text()
+          s = s.replace("<title>Mijn Recepten</title>", "<title>Mijn Recepten Test</title>")
+          s = s.replace('<h1>Mijn Recepten</h1>', '<h1>Mijn Recepten Test</h1>')
+          s = s.replace('href="styles.css?v=1.6.0"', f'href="styles.css?v={version}-test"')
+          p.write_text(s)
+
+          p = root / "manifest.webmanifest"
+          s = p.read_text()
+          s = s.replace('"name": "Mijn Recepten"', '"name": "Mijn Recepten Test"')
+          s = s.replace('"short_name": "Recepten"', '"short_name": "Recepten Test"')
+          p.write_text(s)
+
+          p = root / "app.js"
+          s = p.read_text()
+          s = s.replace("const DB_NAME = 'mijn-recepten-db';", "const DB_NAME = 'mijn-recepten-test-db';")
+          s = s.replace("const THEME_KEY = 'mijn-recepten-theme';", "const THEME_KEY = 'mijn-recepten-test-theme';")
+          if "mijn-recepten-test-db" not in s or "mijn-recepten-test-theme" not in s:
+            raise SystemExit("Could not isolate test storage.")
+          p.write_text(s)
+
+          p = root / "sw.js"
+          s = p.read_text()
+          s = re.sub(
+              r"const CACHE_NAME = 'mijn-recepten-v[^']+';",
+              f"const CACHE_NAME = 'mijn-recepten-test-v{version}';",
+              s,
+              count=1
+          )
+          s = s.replace(
+              "key.startsWith('mijn-recepten-') && key !== CACHE_NAME",
+              "key.startsWith('mijn-recepten-test-') && key !== CACHE_NAME"
+          )
+          if "mijn-recepten-test-v" not in s:
+            raise SystemExit("Could not isolate test cache.")
+          p.write_text(s)
+          PY
+
+          cat > test/README-TEST.txt <<'EOF'
+          Mijn Recepten Testomgeving
+          Deze app gebruikt een eigen database en service-worker-cache.
+          Testgegevens worden niet automatisch overgezet naar productie.
+          EOF
+
+      - name: Checkout main for Pages content
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: publish
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Update only the test folder on main
+        shell: bash
+        env:
+          VERSION: ${{ steps.app.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd publish
+          rm -rf test
+          cp -R ../test ./test
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- test/
+
+          if git diff --cached --quiet; then
+            echo "Test folder is already up to date."
+            exit 0
+          fi
+
+          git commit -m "Publish isolated Mijn Recepten test v${VERSION}"
+          git push origin main
+
+      - name: Report
+        run: |
+          echo "Testappbestanden staan in de map test/."
+          echo "De productie-appbestanden in de hoofdmap zijn niet gewijzigd."
