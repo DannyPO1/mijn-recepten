@@ -30,7 +30,8 @@ jobs:
           path: source
           fetch-depth: 0
 
-      - name: Select and extract ZIP
+      
+      - name: Select and prepare test app
         id: app
         shell: bash
         run: |
@@ -38,32 +39,33 @@ jobs:
           cd source
           shopt -s nullglob
           zips=(MijnRecepten-iPhone-v*.zip)
-          if [[ ${#zips[@]} -eq 0 ]]; then
-            echo "No version ZIP found."
-            exit 1
-          fi
 
-          zipfile="$(printf '%s\n' "${zips[@]}" | grep -E '^MijnRecepten-iPhone-v[0-9]+\.[0-9]+\.[0-9]+\.zip$' | sort -V | tail -n 1 || true)"
-          if [[ -z "$zipfile" ]]; then
-            echo "Invalid ZIP filename."
-            exit 1
-          fi
-
-          version="${zipfile#MijnRecepten-iPhone-v}"
-          version="${version%.zip}"
-          mkdir -p ../extract
-          unzip -q "$zipfile" -d ../extract
-          cd ..
-
-          if [[ -f extract/index.html ]]; then
-            src="extract"
+          if [[ ${#zips[@]} -gt 0 ]]; then
+            zipfile="$(printf '%s\n' "${zips[@]}" | grep -E '^MijnRecepten-iPhone-v[0-9]+\.[0-9]+\.[0-9]+\.zip$' | sort -V | tail -n 1 || true)"
           else
-            mapfile -t candidates < <(find extract -mindepth 2 -maxdepth 3 -type f -name index.html)
-            if [[ ${#candidates[@]} -ne 1 ]]; then
-              echo "ZIP must contain one index.html."
-              exit 1
+            zipfile=""
+          fi
+
+          cd ..
+          if [[ -n "$zipfile" ]]; then
+            version="${zipfile#MijnRecepten-iPhone-v}"
+            version="${version%.zip}"
+            mkdir -p extract
+            unzip -q "source/$zipfile" -d extract
+            if [[ -f extract/index.html ]]; then
+              src="extract"
+            else
+              mapfile -t candidates < <(find extract -mindepth 2 -maxdepth 3 -type f -name index.html)
+              if [[ ${#candidates[@]} -ne 1 ]]; then
+                echo "ZIP must contain one index.html."
+                exit 1
+              fi
+              src="$(dirname "${candidates[0]}")"
             fi
-            src="$(dirname "${candidates[0]}")"
+          else
+            echo "No ZIP found; using app files already installed on the design branch."
+            src="source"
+            version="1.6.0"
           fi
 
           for file in index.html styles.css app.js manifest.webmanifest sw.js; do
@@ -78,6 +80,7 @@ jobs:
           cp "$src/index.html" "$src/styles.css" "$src/app.js" "$src/manifest.webmanifest" "$src/sw.js" test/
           cp -R "$src/icons" test/icons
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
 
       - name: Isolate test app storage and cache
         shell: bash
