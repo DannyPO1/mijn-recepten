@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.5.5';
+  const APP_VERSION = '1.6.0';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -405,7 +405,7 @@
         reloadingForUpdate = true;
         window.location.reload();
       });
-      navigator.serviceWorker.register('./sw.js?v=1.5.5', { updateViaCache: 'none' })
+      navigator.serviceWorker.register('./sw.js?v=1.6.0', { updateViaCache: 'none' })
         .then(registration => registration.update())
         .catch(err => console.warn('Service worker niet geregistreerd', err));
       document.addEventListener('visibilitychange', () => {
