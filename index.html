@@ -14,7 +14,7 @@
     <header class="topbar">
       <div class="brand-mark" aria-hidden="true">MR</div>
       <div class="brand-copy"><p class="eyebrow">JOUW PERSOONLIJKE KOOKBOEK</p><h1>Mijn Recepten</h1></div>
-      <button class="icon-button" id="backupQuick" aria-label="Back-up maken" title="Back-up maken">↥</button>
+      <span class="app-version" data-app-version aria-label="Appversie 1.2.1">v1.2.1</span>
     </header>
 
     <main>
@@ -58,7 +58,7 @@
       </section>
 
       <section class="view" id="view-backup" aria-labelledby="backupTitle">
-        <div class="page-heading"><div><p class="eyebrow">JOUW GEGEVENS</p><h2 id="backupTitle">Back-up & herstel</h2><p class="muted">Bewaar zelf een kopie in iCloud Drive.</p><p class="helper-text">Appversie 1.2.0</p></div><div class="backup-icon">↥</div></div>
+        <div class="page-heading"><div><p class="eyebrow">JOUW GEGEVENS</p><h2 id="backupTitle">Back-up & herstel</h2><p class="muted">Bewaar zelf een kopie in iCloud Drive.</p><p class="helper-text">Appversie <span data-app-version>1.2.1</span></p></div><div class="backup-icon">↥</div></div>
         <div class="backup-card"><div class="backup-symbol">↓</div><h3>Back-up maken</h3><p>Download je recepten, weekmenu en boodschappen als één JSON-bestand. Sla het bestand daarna op in iCloud Drive via de Bestanden-app.</p><button class="primary-button full-width" id="exportBackup">Download back-upbestand</button></div>
         <div class="backup-card"><div class="backup-symbol">↑</div><h3>Back-up terugzetten</h3><p>Importeer een eerder gemaakt back-upbestand. Je kunt bestaande gegevens vervangen of de recepten samenvoegen.</p><label class="file-button full-width">Kies back-upbestand<input id="importFile" type="file" accept="application/json,.json"></label><div id="importOptions" class="import-options hidden"><p id="importSummary"></p><div class="button-row"><button class="secondary-button" id="mergeImport">Samenvoegen</button><button class="danger-button" id="replaceImport">Alles vervangen</button></div></div></div>
         <div class="backup-card"><div class="backup-symbol">✳</div><h3>Recepten importeren vanuit ChatGPT</h3><p>Vraag ChatGPT om een JSON-receptenbestand voor Mijn Recepten. Kies dat bestand hier. Alleen recepten worden geïmporteerd; je weekmenu en boodschappen blijven ongewijzigd.</p><label class="file-button full-width">Kies receptenbestand (.json)<input id="recipeImportFile" type="file" accept="application/json,.json"></label><div id="recipeImportOptions" class="import-options hidden"><p id="recipeImportSummary"></p><div class="button-row"><button class="secondary-button" id="importNewRecipes">Alleen nieuwe toevoegen</button><button class="primary-button" id="updateImportedRecipes">Importeren / bijwerken</button></div></div><p class="helper-text">Dubbele recepten worden herkend op naam. ‘Alleen nieuwe toevoegen’ slaat bestaande namen over; ‘Importeren / bijwerken’ werkt bestaande recepten met dezelfde naam bij.</p></div>

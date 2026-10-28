@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const APP_VERSION = '1.2.1';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -302,9 +303,11 @@
     pendingImport=null;$('importOptions').classList.add('hidden');await persist();renderAll();showToast(mode==='merge'?'Back-up samengevoegd':'Back-up teruggezet');
   }
   function renderAll() {renderHome();renderRecipes();renderWeek();renderShopping();}
+  document.querySelectorAll('[data-app-version]').forEach(el => { el.textContent = el.closest('.topbar') ? `v${APP_VERSION}` : APP_VERSION; });
+
   function bindEvents() {
     document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.nav)));
-    $('backupQuick').addEventListener('click',makeBackup);$('exportBackup').addEventListener('click',makeBackup);
+    $('exportBackup').addEventListener('click',makeBackup);
     $('addRecipeTop').addEventListener('click',()=>openRecipeEditor());$('addRecipeEmpty').addEventListener('click',()=>openRecipeEditor());
     $('closeRecipe').addEventListener('click',()=> $('recipeDialog').close());$('cancelRecipe').addEventListener('click',()=> $('recipeDialog').close());$('recipeForm').addEventListener('submit',saveRecipe);
     $('addIngredient').addEventListener('click',()=>addIngredientRow());$('addStep').addEventListener('click',()=>{addStepRow();renumberSteps();});
