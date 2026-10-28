@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.6.0';
+  const APP_VERSION = '1.7.0';
   const DB_NAME = 'mijn-recepten-test-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -99,9 +99,22 @@
   function recipeIcon(category) { return ({'Ontbijt':'🥞','Lunch':'🥪','Avondeten':'🍽️','Mealprep':'🥡','Snack':'🍎','Overig':'✨','Kinderen':'🧒','Bijgerecht':'🥕','Mexicaans':'🌮','Rijst & Bowls':'🍚','Wraps & Flatbreads':'🌯','Pasta':'🍝','Salades':'🥗','Kip':'🍗'})[category] || '🍴'; }
   function categoryLabel(category) { return `${recipeIcon(category)} ${category || 'Overig'}`; }
   function totalMinutes(recipe) { return (Number(recipe.prep)||0) + (Number(recipe.cook)||0); }
+  function recipePhoto(recipe) {
+    const name = (recipe.name || '').toLocaleLowerCase('nl');
+    const category = (recipe.category || '').toLocaleLowerCase('nl');
+    if (name.includes('pannenkoek') || name.includes('havermout')) return 'https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=900&q=82';
+    if (name.includes('kip') || category.includes('kip')) return 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=900&q=82';
+    if (name.includes('mexica') || name.includes('wrap') || name.includes('flatbread') || category.includes('mexica') || category.includes('wrap')) return 'https://images.unsplash.com/photo-1551509966-5e6b0a9f4b1e?auto=format&fit=crop&w=900&q=82';
+    if (name.includes('salade') || category.includes('salade')) return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=82';
+    if (name.includes('pasta') || category.includes('pasta')) return 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=900&q=82';
+    if (name.includes('rijst') || name.includes('bowl') || category.includes('rijst')) return 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=82';
+    if (category.includes('ontbijt')) return 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=82';
+    return 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=82';
+  }
   function renderCard(recipe) {
     const ingredientCount = (recipe.ingredients || []).filter(i => i.name && i.name.trim()).length;
-    return `<article class="recipe-card" data-open-recipe="${esc(recipe.id)}" tabindex="0" role="button" aria-label="Open ${esc(recipe.name)}"><div class="recipe-art"><span class="category-pill">${esc(recipe.category || 'Overig')}</span><span>${recipeIcon(recipe.category)}</span></div><div class="recipe-card-body"><h3>${esc(recipe.name)}</h3><p class="recipe-description">${esc(recipe.description || (ingredientCount ? ingredientCount + ' ingrediënten' : 'Recept nog aanvullen'))}</p><div class="recipe-meta"><span>◷ ${totalMinutes(recipe)} min.</span><span>♧ ${Number(recipe.servings)||1} porties</span></div></div></article>`;
+    const photo = recipePhoto(recipe);
+    return `<article class="recipe-card" data-open-recipe="${esc(recipe.id)}" tabindex="0" role="button" aria-label="Open ${esc(recipe.name)}"><div class="recipe-art"><img class="recipe-photo" src="${photo}" alt="" loading="lazy" onerror="this.style.display='none'"><span class="category-pill">${esc(recipe.category || 'Overig')}</span><span>${recipeIcon(recipe.category)}</span></div><div class="recipe-card-body"><h3>${esc(recipe.name)}</h3><p class="recipe-description">${esc(recipe.description || (ingredientCount ? ingredientCount + ' ingrediënten' : 'Recept nog aanvullen'))}</p><div class="recipe-meta"><span>◷ ${totalMinutes(recipe)} min.</span><span>♧ ${Number(recipe.servings)||1} porties</span></div></div></article>`;
   }
   function renderHome() {
     $('recipeCount').textContent = `${state.recipes.length} ${state.recipes.length === 1 ? 'recept' : 'recepten'}`;
