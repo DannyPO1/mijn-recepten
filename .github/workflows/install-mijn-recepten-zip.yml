@@ -1,14 +1,19 @@
-
 name: Install Mijn Recepten ZIP
 
 on:
-  workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
-      - "MijnRecepten-iPhone-v1.0.0.zip"
+      - 'MijnRecepten-iPhone-v*.zip'
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: install-mijn-recepten-zip
+  cancel-in-progress: false
 
 jobs:
   install:
@@ -18,21 +23,141 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: Extract app ZIP
+      - name: Select version ZIP
+        id: select_zip
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
         run: |
-          unzip -o MijnRecepten-iPhone-v1.0.0.zip -d extracted
-          cp -r extracted/. .
-          rm -rf extracted
-          rm -f MijnRecepten-iPhone-v1.0.0.zip
+          set -euo pipefail
+          shopt -s nullglob
 
-      - name: Commit app files
+          if [[ "$EVENT_NAME" == "push" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            mapfile -t changed_zips < <(
+              git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" -- 'MijnRecepten-iPhone-v*.zip' |
+              grep -E '^MijnRecepten-iPhone-v[0-9]+\.[0-9]+\.[0-9]+\.zip$' || true
+            )
+
+            if [[ ${#changed_zips[@]} -ne 1 ]]; then
+              echo "Upload exactly one version ZIP per commit."
+              exit 1
+            fi
+
+            zipfile="${changed_zips[0]}"
+          else
+            zips=(MijnRecepten-iPhone-v*.zip)
+
+            if [[ ${#zips[@]} -eq 0 ]]; then
+              echo "No version ZIP found in the repository root."
+              exit 1
+            fi
+
+            zipfile="$(printf '%s\n' "${zips[@]}" | sort -V | tail -n 1)"
+          fi
+
+          if [[ ! -f "$zipfile" ]]; then
+            echo "Selected ZIP does not exist: $zipfile"
+            exit 1
+          fi
+
+          version="${zipfile#MijnRecepten-iPhone-v}"
+          version="${version%.zip}"
+
+          tag="v${version}"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "Tag $tag already exists. Use a new version number."
+            exit 1
+          fi
+
+          echo "zipfile=$zipfile" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Selected $zipfile (version $version)"
+
+      - name: Validate and extract ZIP
+        shell: bash
+        env:
+          ZIPFILE: ${{ steps.select_zip.outputs.zipfile }}
         run: |
+          set -euo pipefail
+
+          rm -rf .install-mijn-recepten
+          mkdir -p .install-mijn-recepten
+
+          unzip -q "$ZIPFILE" -d .install-mijn-recepten
+
+          if [[ -f .install-mijn-recepten/index.html ]]; then
+            src=".install-mijn-recepten"
+          else
+            mapfile -t candidates < <(
+              find .install-mijn-recepten -mindepth 2 -maxdepth 3 \
+                -type f -name index.html
+            )
+
+            if [[ ${#candidates[@]} -ne 1 ]]; then
+              echo "ZIP must contain one index.html at the root or one folder deep."
+              exit 1
+            fi
+
+            src="$(dirname "${candidates[0]}")"
+          fi
+
+          for file in index.html styles.css app.js manifest.webmanifest sw.js README.md; do
+            if [[ ! -f "$src/$file" ]]; then
+              echo "Required app file missing: $file"
+              exit 1
+            fi
+          done
+
+          for file in index.html styles.css app.js manifest.webmanifest sw.js README.md; do
+            cp "$src/$file" "./$file"
+          done
+
+          rm -rf .install-mijn-recepten
+
+      - name: Commit installed app files and remove ZIP
+        shell: bash
+        env:
+          ZIPFILE: ${{ steps.select_zip.outputs.zipfile }}
+          VERSION: ${{ steps.select_zip.outputs.version }}
+        run: |
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m "Install Mijn Recepten app files"
-            git push
+
+          rm -f "$ZIPFILE"
+
+          git add index.html styles.css app.js manifest.webmanifest sw.js README.md
+          git add -u -- "$ZIPFILE"
+
+          if git diff --cached --quiet; then
+            echo "No app changes to commit."
+            exit 1
           fi
+
+          git commit -m "Release Mijn Recepten v${VERSION}"
+          git push origin main
+
+      - name: Create version tag
+        shell: bash
+        env:
+          VERSION: ${{ steps.select_zip.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          tag="v${VERSION}"
+          git fetch --tags origin
+
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "Tag $tag already exists."
+            exit 1
+          fi
+
+          git tag -a "$tag" -m "Mijn Recepten $tag"
+          git push origin "$tag"
