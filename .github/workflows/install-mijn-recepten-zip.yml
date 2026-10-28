@@ -1,3 +1,4 @@
+
 name: Install Mijn Recepten ZIP
 
 on:
@@ -43,21 +44,17 @@ jobs:
               git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" -- 'MijnRecepten-iPhone-v*.zip' |
               grep -E '^MijnRecepten-iPhone-v[0-9]+\.[0-9]+\.[0-9]+\.zip$' || true
             )
-
             if [[ ${#changed_zips[@]} -ne 1 ]]; then
               echo "Upload exactly one version ZIP per commit."
               exit 1
             fi
-
             zipfile="${changed_zips[0]}"
           else
             zips=(MijnRecepten-iPhone-v*.zip)
-
             if [[ ${#zips[@]} -eq 0 ]]; then
               echo "No version ZIP found in the repository root."
               exit 1
             fi
-
             zipfile="$(printf '%s\n' "${zips[@]}" | sort -V | tail -n 1)"
           fi
 
@@ -68,7 +65,6 @@ jobs:
 
           version="${zipfile#MijnRecepten-iPhone-v}"
           version="${version%.zip}"
-
           tag="v${version}"
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
             echo "Tag $tag already exists. Use a new version number."
@@ -85,25 +81,20 @@ jobs:
           ZIPFILE: ${{ steps.select_zip.outputs.zipfile }}
         run: |
           set -euo pipefail
-
           rm -rf .install-mijn-recepten
           mkdir -p .install-mijn-recepten
-
           unzip -q "$ZIPFILE" -d .install-mijn-recepten
 
           if [[ -f .install-mijn-recepten/index.html ]]; then
             src=".install-mijn-recepten"
           else
             mapfile -t candidates < <(
-              find .install-mijn-recepten -mindepth 2 -maxdepth 3 \
-                -type f -name index.html
+              find .install-mijn-recepten -mindepth 2 -maxdepth 3 -type f -name index.html
             )
-
             if [[ ${#candidates[@]} -ne 1 ]]; then
               echo "ZIP must contain one index.html at the root or one folder deep."
               exit 1
             fi
-
             src="$(dirname "${candidates[0]}")"
           fi
 
@@ -114,10 +105,19 @@ jobs:
             fi
           done
 
+          for file in icons/icon-192.png icons/icon-512.png icons/apple-touch-icon.png icons/favicon.png; do
+            if [[ ! -f "$src/$file" ]]; then
+              echo "Required icon file missing: $file"
+              exit 1
+            fi
+          done
+
           for file in index.html styles.css app.js manifest.webmanifest sw.js README.md; do
             cp "$src/$file" "./$file"
           done
 
+          rm -rf ./icons
+          cp -R "$src/icons" ./icons
           rm -rf .install-mijn-recepten
 
       - name: Commit installed app files and remove ZIP
@@ -127,20 +127,15 @@ jobs:
           VERSION: ${{ steps.select_zip.outputs.version }}
         run: |
           set -euo pipefail
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           rm -f "$ZIPFILE"
-
-          git add index.html styles.css app.js manifest.webmanifest sw.js README.md
+          git add index.html styles.css app.js manifest.webmanifest sw.js README.md icons/
           git add -u -- "$ZIPFILE"
-
           if git diff --cached --quiet; then
             echo "No app changes to commit."
             exit 1
           fi
-
           git commit -m "Release Mijn Recepten v${VERSION}"
           git push origin main
 
@@ -150,14 +145,11 @@ jobs:
           VERSION: ${{ steps.select_zip.outputs.version }}
         run: |
           set -euo pipefail
-
           tag="v${VERSION}"
           git fetch --tags origin
-
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
             echo "Tag $tag already exists."
             exit 1
           fi
-
           git tag -a "$tag" -m "Mijn Recepten $tag"
           git push origin "$tag"
