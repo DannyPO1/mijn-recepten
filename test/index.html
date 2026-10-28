@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f5ef" id="themeColorMeta">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon.png">
+  <meta name="description" content="Jouw persoonlijke receptenboek, weekmenu en boodschappenlijst.">
+  <title>Mijn Recepten Test</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css?v=1.6.0-test">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <img class="brand-mark" src="icons/icon-192.png" alt="" aria-hidden="true">
+      <div class="brand-copy"><p class="eyebrow">JOUW PERSOONLIJKE KOOKBOEK</p><h1>Mijn Recepten Test</h1></div>
+      <span class="app-version" data-app-version aria-label="Appversie 1.6.0">v1.6.0</span>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Donkere modus inschakelen" title="Donkere modus inschakelen"><span id="themeToggleIcon" aria-hidden="true">☾</span></button>
+    </header>
+
+    <main>
+      <section class="view active" id="view-home" aria-labelledby="homeTitle">
+        <div class="hero">
+          <div><p class="eyebrow">WAT ETEN WE VANDAAG?</p><h2 id="homeTitle">Lekker overzichtelijk.</h2><p class="muted">Bewaar je gerechten, plan je week en maak in één keer je boodschappenlijst.</p></div>
+          <div class="hero-illustration" aria-hidden="true">✳</div>
+        </div>
+        <div class="quick-grid">
+          <button class="quick-card" data-nav="recipes"><span class="quick-icon">▤</span><strong>Mijn recepten</strong><small id="recipeCount">0 recepten</small></button>
+          <button class="quick-card" data-nav="week"><span class="quick-icon">▦</span><strong>Weekmenu</strong><small>Plan je maaltijden</small></button>
+          <button class="quick-card" data-nav="shopping"><span class="quick-icon">☷</span><strong>Boodschappen</strong><small id="shoppingCount">0 artikelen</small></button>
+          <button class="quick-card" data-nav="backup"><span class="quick-icon">↥</span><strong>Back-up</strong><small>Bewaar in iCloud Drive</small></button>
+        </div>
+        <div class="section-heading"><div><p class="eyebrow">JOUW COLLECTIE</p><h2>Recent toegevoegd</h2></div><button class="text-button" data-nav="recipes">Alles bekijken →</button></div>
+        <div id="recentRecipes" class="recipe-grid"></div>
+        <div class="privacy-note"><span>⌂</span><div><strong>Je recepten blijven van jou</strong><p>De gegevens worden op dit apparaat bewaard. Maak regelmatig een back-up en bewaar die in iCloud Drive.</p></div></div>
+      </section>
+
+      <section class="view" id="view-recipes" aria-labelledby="recipesTitle">
+        <div class="page-heading"><div><p class="eyebrow">JOUW COLLECTIE</p><h2 id="recipesTitle">Recepten</h2><p class="muted">Alles op één plek, helemaal aanpasbaar.</p></div><button class="primary-button" id="addRecipeTop">＋ Nieuw recept</button></div>
+        <label class="searchbox"><span>⌕</span><input id="recipeSearch" type="search" placeholder="Zoek op gerecht of ingrediënt…" autocomplete="off"></label>
+        <div class="filter-row" id="categoryFilters"></div>
+        <div id="allRecipes" class="recipe-grid"></div>
+        <div id="recipesEmpty" class="empty-state hidden"><div class="empty-icon">▤</div><h3>Nog geen recepten gevonden</h3><p>Voeg een recept toe of pas je zoekopdracht aan.</p><button class="primary-button" id="addRecipeEmpty">Recept toevoegen</button></div>
+      </section>
+
+      <section class="view" id="view-week" aria-labelledby="weekTitle">
+        <div class="page-heading"><div><p class="eyebrow">VOORUIT PLANNEN</p><h2 id="weekTitle">Weekmenu</h2><p class="muted">Kies een gerecht voor iedere dag.</p></div><button class="secondary-button" id="clearWeek">Leegmaken</button></div>
+        <div id="weekDays" class="week-list"></div>
+        <div class="bottom-action"><div><strong>Alles op je boodschappenlijst?</strong><p class="muted">Combineer de ingrediënten uit je weekmenu.</p></div><button class="primary-button" id="makeWeekList">Maak lijst →</button></div>
+      </section>
+
+      <section class="view" id="view-shopping" aria-labelledby="shoppingTitle">
+        <div class="page-heading"><div><p class="eyebrow">KLAAR OM TE WINKELEN</p><h2 id="shoppingTitle">Boodschappen</h2><p class="muted">Gecombineerd uit je geselecteerde recepten.</p></div><button class="secondary-button" id="clearShopping">Wissen</button></div>
+        <div class="shopping-summary"><div><span class="summary-number" id="shoppingTotal">0</span><span class="muted"> artikelen</span></div><div><span class="summary-number" id="shoppingDone">0</span><span class="muted"> afgevinkt</span></div></div>
+        <div id="shoppingItems" class="shopping-groups"></div>
+        <div class="shopping-add"><input id="manualItem" type="text" placeholder="Artikel toevoegen…" maxlength="120"><button class="primary-button" id="addManualItem">Toevoegen</button></div>
+        <div class="export-panel"><div><strong>Naar Apple Herinneringen</strong><p class="muted">Deel je lijst met de iOS-Opdracht ‘Voeg boodschappen toe’.</p></div><button class="primary-button" id="shareShopping">Deel lijst ↗</button></div>
+        <p class="helper-text">Deel de lijst via het iOS-deelmenu en kies je ingestelde Opdracht. De webapp kan Herinneringen niet rechtstreeks aanpassen.</p>
+      </section>
+
+      <section class="view" id="view-backup" aria-labelledby="backupTitle">
+        <div class="page-heading"><div><p class="eyebrow">JOUW GEGEVENS</p><h2 id="backupTitle">Back-up & herstel</h2><p class="muted">Bewaar zelf een kopie in iCloud Drive.</p><p class="helper-text">Appversie <span data-app-version>1.6.0</span></p></div><div class="backup-icon">↥</div></div>
+        <div class="backup-card"><div class="backup-symbol">↓</div><h3>Back-up maken</h3><p>Download je recepten, weekmenu en boodschappen als één JSON-bestand. Sla het bestand daarna op in iCloud Drive via de Bestanden-app.</p><button class="primary-button full-width" id="exportBackup">Download back-upbestand</button></div>
+        <div class="backup-card"><div class="backup-symbol">↑</div><h3>Back-up terugzetten</h3><p>Importeer een eerder gemaakt back-upbestand. Je kunt bestaande gegevens vervangen of de recepten samenvoegen.</p><label class="file-button full-width">Kies back-upbestand<input id="importFile" type="file" accept="application/json,.json"></label><div id="importOptions" class="import-options hidden"><p id="importSummary"></p><div class="button-row"><button class="secondary-button" id="mergeImport">Samenvoegen</button><button class="danger-button" id="replaceImport">Alles vervangen</button></div></div></div>
+        <div class="backup-card"><div class="backup-symbol">✳</div><h3>Recepten importeren vanuit ChatGPT</h3><p>Vraag ChatGPT om een JSON-receptenbestand voor Mijn Recepten. Kies dat bestand hier. Alleen recepten worden geïmporteerd; je weekmenu en boodschappen blijven ongewijzigd.</p><label class="file-button full-width">Kies receptenbestand (.json)<input id="recipeImportFile" type="file" accept="application/json,.json"></label><div id="recipeImportOptions" class="import-options hidden"><p id="recipeImportSummary"></p><div class="button-row"><button class="secondary-button" id="importNewRecipes">Alleen nieuwe toevoegen</button><button class="primary-button" id="updateImportedRecipes">Importeren / bijwerken</button></div></div><p class="helper-text">Dubbele recepten worden herkend op naam. ‘Alleen nieuwe toevoegen’ slaat bestaande namen over; ‘Importeren / bijwerken’ werkt bestaande recepten met dezelfde naam bij.</p></div>
+        <div class="privacy-note"><span>i</span><div><strong>Goed om te weten</strong><p>Deze webapp gebruikt lokale browseropslag. Verwijder de websitegegevens niet voordat je een back-up hebt gemaakt. De back-up is niet automatisch versleuteld; bewaar het bestand op een plek waar alleen jij toegang toe hebt.</p></div></div>
+      </section>
+    </main>
+
+    <nav class="tabbar" aria-label="Hoofdnavigatie">
+      <button class="tab active" data-nav="home"><span>⌂</span><small>Home</small></button>
+      <button class="tab" data-nav="recipes"><span>▤</span><small>Recepten</small></button>
+      <button class="tab" data-nav="week"><span>▦</span><small>Weekmenu</small></button>
+      <button class="tab" data-nav="shopping"><span>☷</span><small>Boodschappen</small></button>
+      <button class="tab" data-nav="backup"><span>↥</span><small>Back-up</small></button>
+    </nav>
+  </div>
+
+  <dialog id="recipeDialog" class="modal">
+    <form id="recipeForm" method="dialog">
+      <div class="modal-header"><div><p class="eyebrow">RECEPT BEWERKEN</p><h2 id="recipeDialogTitle">Nieuw recept</h2></div><button type="button" class="icon-button" id="closeRecipe" aria-label="Sluiten">×</button></div>
+      <input type="hidden" id="recipeId">
+      <label class="field-label">Naam van het gerecht<input id="recipeName" required maxlength="120" placeholder="Bijv. Kip met rijst"></label>
+      <div class="two-columns"><label class="field-label">Categorie<select id="recipeCategory"><option>Avondeten</option><option>Ontbijt</option><option>Lunch</option><option>Mealprep</option><option>Snack</option><option>Kinderen</option><option>Bijgerecht</option><option>Mexicaans</option><option>Rijst &amp; Bowls</option><option>Wraps &amp; Flatbreads</option><option>Pasta</option><option>Salades</option><option>Kip</option><option>Overig</option></select></label><label class="field-label">Porties<input id="recipeServings" type="number" min="1" max="100" value="2" required></label></div>
+      <div class="two-columns"><label class="field-label">Voorbereiding (min.)<input id="recipePrep" type="number" min="0" max="999" value="10"></label><label class="field-label">Bereiding (min.)<input id="recipeCook" type="number" min="0" max="999" value="20"></label></div>
+      <label class="field-label">Korte omschrijving<textarea id="recipeDescription" rows="2" placeholder="Wat maakt dit gerecht lekker?"></textarea></label>
+      <div class="subform-heading"><div><h3>Ingrediënten</h3><p class="muted">Hoeveelheid en eenheid zijn optioneel.</p></div><button type="button" class="small-button" id="addIngredient">＋ Ingrediënt</button></div>
+      <div id="ingredientEditor" class="ingredient-editor"></div>
+      <div class="subform-heading"><div><h3>Bereidingsstappen</h3><p class="muted">Eén stap per regel.</p></div><button type="button" class="small-button" id="addStep">＋ Stap</button></div>
+      <div id="stepEditor" class="step-editor"></div>
+      <label class="field-label">Eigen notities<textarea id="recipeNotes" rows="2" placeholder="Variaties, tips of bewaarinstructies"></textarea></label>
+      <div class="button-row modal-actions"><button type="button" class="secondary-button" id="cancelRecipe">Annuleren</button><button type="submit" class="primary-button">Recept opslaan</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="detailDialog" class="modal detail-modal"><div id="recipeDetail"></div></dialog>
+  <dialog id="weekPickerDialog" class="modal"><form method="dialog" id="weekPickerForm"><div class="modal-header"><div><p class="eyebrow">WEEKMENU</p><h2>Maaltijd plannen</h2></div><button type="button" class="icon-button" id="closeWeekPicker">×</button></div><input type="hidden" id="weekDayKey"><label class="field-label">Kies een recept<select id="weekRecipeSelect"></select></label><label class="field-label">Aantal personen<input id="weekServings" type="number" min="1" max="100" value="2"></label><div class="button-row modal-actions"><button type="button" class="secondary-button" id="removeWeekMeal">Verwijderen</button><button type="submit" class="primary-button">Opslaan</button></div></form></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js?v=1.6.0"></script>
+</body>
+</html>
