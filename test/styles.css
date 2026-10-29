@@ -294,3 +294,140 @@ html[data-theme="dark"] .shopping-hero {
   background-position: center center !important;
   background-repeat: no-repeat !important;
 }
+
+
+/* v1.7.5 — recipe-detail photography, richer week planner, clearer navigation */
+.detail-cover {
+  height: 210px;
+  overflow: hidden;
+  background: #e9eee5;
+}
+.detail-cover-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 48%;
+}
+.detail-cover-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(25,42,29,.18), transparent 48%, rgba(25,42,29,.14));
+  pointer-events: none;
+}
+.detail-cover .icon-button {
+  z-index: 2;
+  box-shadow: 0 5px 20px rgba(0,0,0,.12);
+}
+.detail-content { max-height: calc(88dvh - 210px); }
+.tab { gap: 5px; padding: 5px 0 3px; min-width: 0; }
+.tab-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 38px;
+  border-radius: 14px;
+  transition: background .18s ease, transform .18s ease;
+}
+.tab-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tab.active .tab-icon { background: var(--green-pale); transform: translateY(-1px); }
+.tab.active span { padding: 0; }
+.tab small { font-size: 10px; white-space: nowrap; }
+.week-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  min-height: 205px;
+  margin: 4px 0 24px;
+  padding: 24px 22px;
+  overflow: hidden;
+  border-radius: 27px;
+  color: #fffdf7;
+  background: #405b45 url("https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1400&q=85") center 48% / cover no-repeat;
+  box-shadow: var(--shadow);
+}
+.week-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(0deg, rgba(24,42,29,.86), rgba(24,42,29,.08));
+}
+.week-hero > div { max-width: 430px; }
+.week-hero .eyebrow { color: #f0d7b7; }
+.week-hero h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(34px, 7vw, 45px);
+  line-height: 1;
+  margin: 0 0 9px;
+}
+.week-hero p:last-child { color: rgba(255,253,247,.9); font-size: 14px; margin: 0; }
+.week-list { gap: 12px; }
+.week-day {
+  grid-template-columns: 56px minmax(0,1fr) 38px;
+  border-radius: 21px;
+  padding: 12px;
+  box-shadow: 0 5px 16px rgba(53,66,47,.045);
+}
+.day-label {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 14px;
+  background: var(--green-pale);
+  color: var(--green);
+  min-height: 74px;
+}
+.day-label strong { font-size: 11px; }
+.day-label small { font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.week-meal { display: flex; align-items: center; gap: 11px; min-height: 74px; }
+.week-recipe-thumb {
+  flex: 0 0 76px;
+  width: 76px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 13px;
+  background: var(--green-pale);
+}
+.week-meal-copy { min-width: 0; flex: 1; }
+.week-meal-copy strong { font-family: Georgia, "Times New Roman", serif; font-size: 14px; line-height: 1.2; }
+.week-meal-copy small { line-height: 1.35; font-size: 10px; }
+.week-empty-art {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #e9eee5, #f4e9dc);
+  color: var(--green);
+  font-size: 26px;
+}
+.day-add { flex-shrink: 0; border-radius: 13px; background: var(--surface); }
+html[data-theme="dark"] .week-hero {
+  background-image: url("https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1400&q=85");
+  background-size: cover;
+  background-position: center 48%;
+}
+html[data-theme="dark"] .detail-cover { background: #29372b; }
+@media (max-width: 390px) {
+  .week-day { grid-template-columns: 48px minmax(0,1fr) 34px; gap: 8px; padding: 9px; }
+  .week-recipe-thumb { flex-basis: 60px; width: 60px; height: 62px; }
+  .week-meal { gap: 8px; }
+  .tab-icon { width: 42px; }
+  .tab small { font-size: 9px; }
+}
