@@ -11,14 +11,14 @@
   <meta name="description" content="Jouw persoonlijke receptenboek, weekmenu en boodschappenlijst.">
   <title>Mijn Recepten</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=1.7.8">
+  <link rel="stylesheet" href="styles.css?v=1.8.0">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <img class="brand-mark" src="icons/icon-192.png" alt="" aria-hidden="true">
       <div class="brand-copy"><p class="eyebrow">JOUW PERSOONLIJKE KOOKBOEK</p><h1>Mijn Recepten</h1></div>
-      <span class="test-version-stack"><span class="app-version" data-app-version aria-label="Appversie 1.7.8">v1.7.8</span><span class="test-label">TEST</span></span>
+      <span class="test-version-stack"><span class="app-version" data-app-version aria-label="Appversie 1.8.0">v1.8.0</span><span class="test-label">TEST</span></span>
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Donkere modus inschakelen" title="Donkere modus inschakelen"><span id="themeToggleIcon" aria-hidden="true">☾</span></button>
     </header>
 
@@ -118,6 +118,6 @@
   <dialog id="detailDialog" class="modal detail-modal"><div id="recipeDetail"></div></dialog>
   <dialog id="weekPickerDialog" class="modal"><form method="dialog" id="weekPickerForm"><div class="modal-header"><div><p class="eyebrow">WEEKMENU</p><h2>Maaltijd plannen</h2></div><button type="button" class="icon-button" id="closeWeekPicker">×</button></div><input type="hidden" id="weekDayKey"><label class="field-label">Kies een recept<select id="weekRecipeSelect"></select></label><label class="field-label">Aantal personen<input id="weekServings" type="number" min="1" max="100" value="2"></label><div class="button-row modal-actions"><button type="button" class="secondary-button" id="removeWeekMeal">Verwijderen</button><button type="submit" class="primary-button">Opslaan</button></div></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=1.7.8"></script>
+  <script src="app.js?v=1.8.0"></script>
 </body>
 </html>
