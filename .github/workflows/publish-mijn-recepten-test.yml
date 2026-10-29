@@ -89,7 +89,22 @@ jobs:
           cp ../README.md test/
 
           cp -R ../icons test/icons
-          cp -R ../images test/images
+                    cp -R ../images test/images
+
+          # Geef alleen de testapp een eigen naam.
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest_path = Path("test/manifest.webmanifest")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["name"] = "Mijn Recepten test"
+          manifest["short_name"] = "Mijn Recepten test"
+          manifest_path.write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8"
+          )
+          PY
 
           touch test/.nojekyll
 
