@@ -71,7 +71,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Werk uitsluitend de testmap bij
+      - name: Publiceer testapp met TEST-label
         shell: bash
         run: |
           set -euo pipefail
@@ -84,30 +84,16 @@ jobs:
           cp ../index.html test/
           cp ../styles.css test/
           cp ../app.js test/
-                    # Toon TEST direct onder het versienummer, uitsluitend in de testapp.
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path("test/app.js")
-          js = path.read_text(encoding="utf-8")
-
-          marker = "const APP_VERSION = '1.7.8';"
-
-          if marker not in js:
-              raise SystemExit(
-                  "APP_VERSION niet gevonden. Er zijn geen wijzigingen aangebracht."
-              )
-
-          print("Versienummer gevonden; app.js is klaar voor de testbadge.")
-          PY
           cp ../manifest.webmanifest test/
           cp ../sw.js test/
           cp ../README.md test/
 
           cp -R ../icons test/icons
-                    cp -R ../images test/images
+          cp -R ../images test/images
 
-          # Geef alleen de testapp een eigen naam.
+          touch test/.nojekyll
+
+          # Pas alleen de manifestnaam van de testapp aan.
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -115,47 +101,16 @@ jobs:
           manifest_path = Path("test/manifest.webmanifest")
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
           manifest["name"] = "Mijn Recepten test"
-          manifest["short_name"] = "Mijn Recepten test"
+          manifest["short_name"] = "Recepten test"
           manifest_path.write_text(
               json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
               encoding="utf-8"
           )
-          PY
 
-          touch test/.nojekyll
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add test/
-
-          if git diff --cached --quiet; then
-            echo "Geen wijzigingen in de testapp."
-            exit 0
-          fi
-
-          git commit -m "Publiceer Mijn Recepten testapp"
-          git push origin main
-
-      
-      - name: Voeg TEST-label toe aan testapp
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          python3 - <<'PY'
-          from pathlib import Path
-
-          html_path = Path("main-repo/test/index.html")
+          # Voeg TEST toe direct onder het versienummer in de topbar.
+          html_path = Path("test/index.html")
           html = html_path.read_text(encoding="utf-8")
 
-          marker = 'data-app-version'
-          if marker not in html:
-              raise SystemExit(
-                  "Geen element met data-app-version gevonden in index.html."
-              )
-
-          # Voeg een label toe direct na het versie-element in de topbar.
           import re
 
           pattern = r'(<[^>]*data-app-version[^>]*>.*?</[^>]+>)'
@@ -163,25 +118,29 @@ jobs:
 
           if not match:
               raise SystemExit(
-                  "Versie-element niet veilig gevonden; HTML niet aangepast."
+                  "Versie-element niet gevonden in index.html; publicatie afgebroken."
               )
 
           following = html[match.end():]
-          if re.match(r'\s*<[^>]*class=["\'][^"\']*\btest-label\b', following):
-              print("TEST-label staat al in de HTML.")
-          else:
-              label = '<span class="test-label">TEST</span>'
-              html = html[:match.end()] + '\n' + label + html[match.end():]
-              html_path.write_text(html, encoding="utf-8")
-              print("TEST-label toegevoegd aan de testapp.")
+          if not re.match(
+              r'\s*<[^>]*class=["\'][^"\']*\btest-label\b',
+              following
+          ):
+              html = (
+                  html[:match.end()]
+                  + '\n<span class="test-label">TEST</span>'
+                  + html[match.end():]
+              )
 
-          css_path = Path("main-repo/test/styles.css")
+          html_path.write_text(html, encoding="utf-8")
+
+          # Voeg styling toe aan uitsluitend de testversie.
+          css_path = Path("test/styles.css")
           css = css_path.read_text(encoding="utf-8")
 
           if ".test-label" not in css:
               css += """
 
-          /* Alleen zichtbaar in de testpublicatie */
           .test-label {
             display: inline-block;
             margin-top: 4px;
@@ -197,17 +156,25 @@ jobs:
           }
           """
               css_path.write_text(css, encoding="utf-8")
-              print("Opmaak voor TEST-label toegevoegd.")
 
+          print("Testmanifest en TEST-label ingesteld.")
           PY
 
-          cd main-repo
-          git add test/index.html test/styles.css
-          git commit -m "Voeg TEST-label toe aan testapp" || true
-          git push origin main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          git add test/
+
+          if git diff --cached --quiet; then
+            echo "Geen wijzigingen in de testapp."
+            exit 0
+          fi
+
+          git commit -m "Publiceer Mijn Recepten testapp met TEST-label"
+          git push origin main
 
       - name: Rapportage
         run: |
-          echo "Testapp en fotobibliotheek bijgewerkt in test/."
+          echo "Testapp gepubliceerd in test/."
+          echo "De testapp heeft een eigen manifestnaam en TEST-label."
           echo "Productiebestanden in de hoofdmap zijn niet gewijzigd."
