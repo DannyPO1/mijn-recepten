@@ -39,41 +39,52 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
 
-          if [[ "$EVENT_NAME" == "push" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+          if [[ "$EVENT_NAME" == "push" &&
+                "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+
             mapfile -t changed_zips < <(
               git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" -- 'MijnRecepten-iPhone-v*.zip' |
               grep -E '^MijnRecepten-iPhone-v[0-9]+\.[0-9]+\.[0-9]+\.zip$' || true
             )
+
             if [[ ${#changed_zips[@]} -ne 1 ]]; then
-              echo "Upload exactly one version ZIP per commit."
+              echo "Upload precies één versie-ZIP per commit."
               exit 1
             fi
+
             zipfile="${changed_zips[0]}"
           else
             zips=(MijnRecepten-iPhone-v*.zip)
+
             if [[ ${#zips[@]} -eq 0 ]]; then
-              echo "No version ZIP found in the repository root."
+              echo "Geen versie-ZIP gevonden in de hoofdmap."
               exit 1
             fi
+
             zipfile="$(printf '%s\n' "${zips[@]}" | sort -V | tail -n 1)"
           fi
 
           if [[ ! -f "$zipfile" ]]; then
-            echo "Selected ZIP does not exist: $zipfile"
+            echo "Geselecteerde ZIP bestaat niet: $zipfile"
             exit 1
           fi
 
           version="${zipfile#MijnRecepten-iPhone-v}"
           version="${version%.zip}"
           tag="v${version}"
+
+          git fetch --tags origin
+
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "Tag $tag already exists. Use a new version number."
+            echo "Tag $tag bestaat al. Gebruik een nieuw versienummer."
             exit 1
           fi
 
           echo "zipfile=$zipfile" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Selected $zipfile (version $version)"
+
+          echo "Geselecteerd: $zipfile"
+          echo "Productieversie: $version"
 
       - name: Validate and extract ZIP
         shell: bash
@@ -81,44 +92,108 @@ jobs:
           ZIPFILE: ${{ steps.select_zip.outputs.zipfile }}
         run: |
           set -euo pipefail
+
           rm -rf .install-mijn-recepten
           mkdir -p .install-mijn-recepten
+
           unzip -q "$ZIPFILE" -d .install-mijn-recepten
 
           if [[ -f .install-mijn-recepten/index.html ]]; then
             src=".install-mijn-recepten"
           else
             mapfile -t candidates < <(
-              find .install-mijn-recepten -mindepth 2 -maxdepth 3 -type f -name index.html
+              find .install-mijn-recepten \
+                -mindepth 2 -maxdepth 3 \
+                -type f -name index.html
             )
+
             if [[ ${#candidates[@]} -ne 1 ]]; then
-              echo "ZIP must contain one index.html at the root or one folder deep."
+              echo "ZIP moet één index.html bevatten in de hoofdmap of één mapniveau lager."
               exit 1
             fi
+
             src="$(dirname "${candidates[0]}")"
           fi
 
-          for file in index.html styles.css app.js manifest.webmanifest sw.js README.md; do
+          for file in \
+            index.html \
+            styles.css \
+            app.js \
+            manifest.webmanifest \
+            sw.js \
+            README.md
+          do
             if [[ ! -f "$src/$file" ]]; then
-              echo "Required app file missing: $file"
+              echo "Verplicht appbestand ontbreekt: $file"
               exit 1
             fi
           done
 
-          for file in icons/icon-192.png icons/icon-512.png icons/apple-touch-icon.png icons/favicon.png; do
+          for file in \
+            icons/icon-192.png \
+            icons/icon-512.png \
+            icons/apple-touch-icon.png \
+            icons/favicon.png
+          do
             if [[ ! -f "$src/$file" ]]; then
-              echo "Required icon file missing: $file"
+              echo "Verplicht pictogram ontbreekt: $file"
               exit 1
             fi
           done
 
-          for file in index.html styles.css app.js manifest.webmanifest sw.js README.md; do
+          if [[ ! -d "$src/images/recipes" ]]; then
+            echo "Fotobibliotheek images/recipes/ ontbreekt."
+            exit 1
+          fi
+
+          if ! find "$src/images/recipes" \
+            -maxdepth 1 -type f -name '*.webp' | grep -q .
+          then
+            echo "Geen WebP-receptfoto's gevonden."
+            exit 1
+          fi
+
+          # Controleer of het productie-manifest geldige JSON bevat.
+          python3 - "$src/manifest.webmanifest" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as file:
+              manifest = json.load(file)
+
+          if not manifest.get("name") or not manifest.get("short_name"):
+              raise SystemExit(
+                  "Het manifest moet name en short_name bevatten."
+              )
+
+          if "test" in manifest["name"].lower():
+              raise SystemExit(
+                  "Het productie-manifest bevat een testnaam."
+              )
+
+          print("Productiemanifest gecontroleerd.")
+          PY
+
+          # Installeer appbestanden.
+          for file in \
+            index.html \
+            styles.css \
+            app.js \
+            manifest.webmanifest \
+            sw.js \
+            README.md
+          do
             cp "$src/$file" "./$file"
           done
 
-          rm -rf ./icons
+          # Vervang pictogrammen en fotobibliotheek.
+          rm -rf ./icons ./images
           cp -R "$src/icons" ./icons
+          cp -R "$src/images" ./images
+
           rm -rf .install-mijn-recepten
+
+          echo "Appbestanden, pictogrammen en foto's zijn gecontroleerd en uitgepakt."
 
       - name: Commit installed app files and remove ZIP
         shell: bash
@@ -127,15 +202,29 @@ jobs:
           VERSION: ${{ steps.select_zip.outputs.version }}
         run: |
           set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           rm -f "$ZIPFILE"
-          git add index.html styles.css app.js manifest.webmanifest sw.js README.md icons/
+
+          git add \
+            index.html \
+            styles.css \
+            app.js \
+            manifest.webmanifest \
+            sw.js \
+            README.md \
+            icons/ \
+            images/
+
           git add -u -- "$ZIPFILE"
+
           if git diff --cached --quiet; then
-            echo "No app changes to commit."
+            echo "Geen appwijzigingen om te committen."
             exit 1
           fi
+
           git commit -m "Release Mijn Recepten v${VERSION}"
           git push origin main
 
@@ -145,11 +234,21 @@ jobs:
           VERSION: ${{ steps.select_zip.outputs.version }}
         run: |
           set -euo pipefail
+
           tag="v${VERSION}"
+
           git fetch --tags origin
+
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "Tag $tag already exists."
+            echo "Tag $tag bestaat al."
             exit 1
           fi
+
           git tag -a "$tag" -m "Mijn Recepten $tag"
           git push origin "$tag"
+
+      - name: Rapportage
+        run: |
+          echo "Productie-installatie voltooid."
+          echo "De productie-appbestanden en fotobibliotheek zijn bijgewerkt."
+          echo "De testmap test/ is niet door deze workflow gewijzigd."
