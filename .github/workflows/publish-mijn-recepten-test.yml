@@ -2,23 +2,16 @@
 name: Publish Mijn Recepten testapp
 
 on:
-  push:
-    branches:
-      - feature/nieuw-ontwerp
-    paths:
-      - 'index.html'
-      - 'styles.css'
-      - 'app.js'
-      - 'manifest.webmanifest'
-      - 'sw.js'
-      - 'README.md'
-      - 'icons/**'
-      - 'images/**'
-      - '.github/workflows/publish-mijn-recepten-test.yml'
+  workflow_run:
+    workflows:
+      - Test Mijn Recepten ontwerpbranch
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: publish-mijn-recepten-test
@@ -26,7 +19,12 @@ concurrency:
 
 jobs:
   publish-test:
-    if: github.ref == 'refs/heads/feature/nieuw-ontwerp'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'feature/nieuw-ontwerp'
+      )
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: feature/nieuw-ontwerp
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Controleer app-bestanden en foto's
         shell: bash
@@ -65,7 +63,7 @@ jobs:
             exit 1
           }
 
-      - name: Checkout main zonder productiebestanden te wijzigen
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
           ref: main
@@ -81,8 +79,6 @@ jobs:
           cd main-repo
 
           mkdir -p test
-
-          # Vervang uitsluitend de inhoud van de testmap.
           find test -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 
           cp ../index.html test/
@@ -95,11 +91,7 @@ jobs:
           cp -R ../icons test/icons
           cp -R ../images test/images
 
-          # Markeer de testmap als zelfstandige GitHub Pages-map.
           touch test/.nojekyll
-
-          # Zorg dat de test-PWA zijn eigen URL en cache gebruikt.
-          # De productiebestanden buiten test/ blijven ongemoeid.
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -116,6 +108,5 @@ jobs:
 
       - name: Rapportage
         run: |
-          echo "De testapp is bijgewerkt in de map test/ op main."
-          echo "De map images/ is meegepubliceerd."
-          echo "De productie-app in de hoofdmap is niet door deze workflow gewijzigd."
+          echo "Testapp en fotobibliotheek bijgewerkt in test/."
+          echo "Productiebestanden in de hoofdmap zijn niet gewijzigd."
