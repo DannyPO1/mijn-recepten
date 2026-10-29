@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.7.6';
+  const APP_VERSION = '1.7.8';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -100,16 +100,32 @@
   function categoryLabel(category) { return `${recipeIcon(category)} ${category || 'Overig'}`; }
   function totalMinutes(recipe) { return (Number(recipe.prep)||0) + (Number(recipe.cook)||0); }
   function recipePhoto(recipe) {
-    const name = (recipe.name || '').toLocaleLowerCase('nl');
-    const category = (recipe.category || '').toLocaleLowerCase('nl');
-    if (name.includes('pannenkoek') || name.includes('havermout')) return 'https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=900&q=82';
-    if (name.includes('kip') || category.includes('kip')) return 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=900&q=82';
-    if (name.includes('mexica') || name.includes('wrap') || name.includes('flatbread') || category.includes('mexica') || category.includes('wrap')) return 'https://images.unsplash.com/photo-1551509966-5e6b0a9f4b1e?auto=format&fit=crop&w=900&q=82';
-    if (name.includes('salade') || category.includes('salade')) return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=82';
-    if (name.includes('pasta') || category.includes('pasta')) return 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=900&q=82';
-    if (name.includes('rijst') || name.includes('bowl') || category.includes('rijst')) return 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=82';
-    if (category.includes('ontbijt')) return 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=82';
-    return 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=82';
+    if (recipe?.photoDataUrl) return recipe.photoDataUrl;
+    const name = (recipe?.name || '').toLocaleLowerCase('nl');
+    const category = (recipe?.category || '').toLocaleLowerCase('nl');
+    const asset = (file) => `images/recipes/${file}.webp`;
+    if (name.includes('pannenkoek') || name.includes('havermout')) return asset('havermout-bananenpannenkoeken');
+    if (name.includes('mexica') || name.includes('taco') || name.includes('chili')) return asset('mexicaanse-vulling');
+    if (name.includes('wrap') || name.includes('flatbread')) return asset('kip-wraps');
+    if (name.includes('kip') && (name.includes('rijst') || category.includes('rijst'))) return asset('kip-met-rijst');
+    if (name.includes('kip') || category.includes('kip')) return asset('kip-curry');
+    if (name.includes('carbonara')) return asset('pasta-carbonara');
+    if (name.includes('pasta') || name.includes('bolognese') || category.includes('pasta')) return asset('pasta-bolognese');
+    if (name.includes('noedel')) return asset('noedels-kip');
+    if (name.includes('zalm')) return asset('zalm-met-rijst');
+    if (name.includes('tonijn')) return asset('tonijnsalade');
+    if (name.includes('salade') || category.includes('salade')) return asset('tonijnsalade');
+    if (name.includes('soep')) return asset(name.includes('linzen') ? 'linzensoep' : 'groentesoep');
+    if (name.includes('linzen') || name.includes('curry')) return asset('linzencurry');
+    if (name.includes('omelet') || category.includes('ontbijt')) return asset('omelet-groente');
+    if (name.includes('burger')) return asset('hamburgers');
+    if (name.includes('falafel')) return asset('falafel-wraps');
+    if (name.includes('kwark') || name.includes('fruit')) return asset('kwark-met-fruit');
+    if (name.includes('aardappel') || name.includes('groente')) return asset('aardappelen-groente-kip');
+    if (name.includes('rijst') || name.includes('bowl') || category.includes('rijst')) return asset('quinoa-bowl');
+    if (name.includes('smoothie')) return asset('smoothie-bowl');
+    if (name.includes('shakshuka') || category.includes('mexicaans')) return asset('shakshuka');
+    return asset('quinoa-bowl');
   }
   function renderCard(recipe) {
     const ingredientCount = (recipe.ingredients || []).filter(i => i.name && i.name.trim()).length;
@@ -142,6 +158,10 @@
     $('recipeServings').value = recipe?.servings || 2;
     $('recipePrep').value = recipe?.prep ?? 10; $('recipeCook').value = recipe?.cook ?? 20;
     $('recipeDescription').value = recipe?.description || ''; $('recipeNotes').value = recipe?.notes || '';
+    $('recipePhotoInput').value = ''; $('removeRecipePhoto').dataset.remove = 'false';
+    $('recipePhotoPreview').src = recipe?.photoDataUrl || recipePhoto(recipe || {name:'',category:'Avondeten'});
+    $('recipePhotoPreview').classList.remove('hidden');
+    $('removeRecipePhoto').classList.toggle('hidden', !recipe?.photoDataUrl);
     $('ingredientEditor').innerHTML = ''; $('stepEditor').innerHTML = '';
     (recipe?.ingredients?.length ? recipe.ingredients : [{name:'',qty:'',unit:''}]).forEach(addIngredientRow);
     (recipe?.steps?.length ? recipe.steps : [{text:''}]).forEach(addStepRow);
@@ -160,14 +180,32 @@
     $('stepEditor').appendChild(row);
   }
   function renumberSteps() { [...$('stepEditor').children].forEach((r,i)=>r.querySelector('.step-number').textContent=i+1); }
+  async function imageFileToDataUrl(file) {
+    if (!file) return null;
+    if (!file.type.startsWith('image/')) throw new Error('Kies een afbeeldingsbestand.');
+    const source = await new Promise((resolve, reject) => {
+      const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('De foto kon niet worden gelezen.')); reader.readAsDataURL(file);
+    });
+    const image = await new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(new Error('Deze foto kan niet worden geopend.')); img.src = source; });
+    const maxSide = 1000, scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+    const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.round(image.width * scale)); canvas.height = Math.max(1, Math.round(image.height * scale));
+    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.82);
+  }
   async function saveRecipe(event) {
     event.preventDefault();
     const id = $('recipeId').value || uid();
     const old = state.recipes.find(r=>r.id===id);
     const ingredients = [...$('ingredientEditor').querySelectorAll('.ingredient-row')].map(row=>({id:uid(),name:row.querySelector('.ing-name').value.trim(),qty:row.querySelector('.ing-qty').value.trim(),unit:row.querySelector('.ing-unit').value.trim(),optional:false})).filter(i=>i.name);
     const steps = [...$('stepEditor').querySelectorAll('.step-row')].map(row=>({id:uid(),text:row.querySelector('.step-text').value.trim()})).filter(s=>s.text);
-    const recipe = {id,name:$('recipeName').value.trim(),category:$('recipeCategory').value,servings:Math.max(1,Number($('recipeServings').value)||1),prep:Math.max(0,Number($('recipePrep').value)||0),cook:Math.max(0,Number($('recipeCook').value)||0),description:$('recipeDescription').value.trim(),ingredients,steps,notes:$('recipeNotes').value.trim(),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
-    if (!recipe.name) return;
+    if (! $('recipeName').value.trim()) return;
+    let photoDataUrl = old?.photoDataUrl || '';
+    try {
+      if ($('removeRecipePhoto').dataset.remove === 'true') photoDataUrl = '';
+      const file = $('recipePhotoInput').files?.[0];
+      if (file) photoDataUrl = await imageFileToDataUrl(file);
+    } catch (error) { showToast(error.message || 'Foto kon niet worden verwerkt.'); return; }
+    const recipe = {id,name:$('recipeName').value.trim(),category:$('recipeCategory').value,servings:Math.max(1,Number($('recipeServings').value)||1),prep:Math.max(0,Number($('recipePrep').value)||0),cook:Math.max(0,Number($('recipeCook').value)||0),description:$('recipeDescription').value.trim(),ingredients,steps,notes:$('recipeNotes').value.trim(),photoDataUrl,createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
     if (old) state.recipes = state.recipes.map(r=>r.id===id?recipe:r); else state.recipes.unshift(recipe);
     await persist(); $('recipeDialog').close(); renderAll(); showToast(old?'Recept bijgewerkt':'Recept opgeslagen');
   }
@@ -384,6 +422,8 @@
     $('themeToggle').addEventListener('click',()=>applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
     $('addRecipeTop').addEventListener('click',()=>openRecipeEditor());$('addRecipeEmpty').addEventListener('click',()=>openRecipeEditor());
     $('closeRecipe').addEventListener('click',()=> $('recipeDialog').close());$('cancelRecipe').addEventListener('click',()=> $('recipeDialog').close());$('recipeForm').addEventListener('submit',saveRecipe);
+    $('recipePhotoInput').addEventListener('change', async e=>{const file=e.target.files?.[0];if(!file)return;try{$('recipePhotoPreview').src=await imageFileToDataUrl(file);$('recipePhotoPreview').classList.remove('hidden');$('removeRecipePhoto').classList.remove('hidden');$('removeRecipePhoto').dataset.remove='false';}catch(error){showToast(error.message||'Foto kon niet worden geopend.');}});
+    $('removeRecipePhoto').addEventListener('click',()=>{$('recipePhotoInput').value='';$('removeRecipePhoto').dataset.remove='true';$('recipePhotoPreview').src=recipePhoto({name:$('recipeName').value,category:$('recipeCategory').value});$('removeRecipePhoto').classList.add('hidden');showToast('Eigen foto wordt verwijderd bij opslaan.');});
     $('addIngredient').addEventListener('click',()=>addIngredientRow());$('addStep').addEventListener('click',()=>{addStepRow();renumberSteps();});
     $('recipeSearch').addEventListener('input',renderRecipes);
     $('categoryFilters').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;activeCategory=b.dataset.category;renderRecipes();});
@@ -418,7 +458,7 @@
         reloadingForUpdate = true;
         window.location.reload();
       });
-      navigator.serviceWorker.register('./sw.js?v=1.6.0', { updateViaCache: 'none' })
+      navigator.serviceWorker.register('./sw.js?v=1.7.7', { updateViaCache: 'none' })
         .then(registration => registration.update())
         .catch(err => console.warn('Service worker niet geregistreerd', err));
       document.addEventListener('visibilitychange', () => {
