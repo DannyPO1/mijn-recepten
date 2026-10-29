@@ -34,41 +34,18 @@ jobs:
       - name: Select version ZIP
         id: select_zip
         shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BEFORE_SHA: ${{ github.event.before }}
-          CURRENT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           shopt -s nullglob
 
-          if [[ "$EVENT_NAME" == "push" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
-            mapfile -t changed_zips < <(
-              git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" -- 'MijnRecepten-iPhone-v*.zip' |
-              grep -E '^MijnRecepten-iPhone-v[0-9]+\.[0-9]+\.[0-9]+\.zip$' || true
-            )
+          zips=(MijnRecepten-iPhone-v*.zip)
 
-            if [[ ${#changed_zips[@]} -ne 1 ]]; then
-              echo "Upload precies één versie-ZIP per commit."
-              exit 1
-            fi
-
-            zipfile="${changed_zips[0]}"
-          else
-            zips=(MijnRecepten-iPhone-v*.zip)
-
-            if [[ ${#zips[@]} -eq 0 ]]; then
-              echo "Geen versie-ZIP gevonden in de hoofdmap."
-              exit 1
-            fi
-
-            zipfile="$(printf '%s\n' "${zips[@]}" | sort -V | tail -n 1)"
-          fi
-
-          if [[ ! -f "$zipfile" ]]; then
-            echo "ZIP-bestand bestaat niet: $zipfile"
+          if [[ ${#zips[@]} -eq 0 ]]; then
+            echo "Geen versie-ZIP gevonden in de hoofdmap."
             exit 1
           fi
+
+          zipfile="$(printf '%s\n' "${zips[@]}" | sort -V | tail -n 1)"
 
           version="${zipfile#MijnRecepten-iPhone-v}"
           version="${version%.zip}"
