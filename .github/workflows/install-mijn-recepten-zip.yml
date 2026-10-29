@@ -42,10 +42,21 @@ jobs:
           if [[ "$EVENT_NAME" == "push" &&
                 "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
 
+            # Alleen toegevoegde of gewijzigde ZIP-bestanden tellen mee.
+            # Verwijderde bestanden worden bewust genegeerd.
             mapfile -t changed_zips < <(
-              git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" -- 'MijnRecepten-iPhone-v*.zip' |
+              git diff --diff-filter=AM --name-only \
+                "$BEFORE_SHA" "$CURRENT_SHA" -- 'MijnRecepten-iPhone-v*.zip' |
               grep -E '^MijnRecepten-iPhone-v[0-9]+\.[0-9]+\.[0-9]+\.zip$' || true
             )
+
+            if [[ ${#changed_zips[@]} -eq 0 ]]; then
+              echo "Geen nieuwe of gewijzigde versie-ZIP gevonden."
+              echo "Waarschijnlijk is alleen een ZIP verwijderd."
+              echo "Installatie wordt overgeslagen."
+              echo "should_install=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
 
             if [[ ${#changed_zips[@]} -ne 1 ]]; then
               echo "Upload precies één versie-ZIP per commit."
@@ -58,7 +69,8 @@ jobs:
 
             if [[ ${#zips[@]} -eq 0 ]]; then
               echo "Geen versie-ZIP gevonden in de hoofdmap."
-              exit 1
+              echo "should_install=false" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
 
             zipfile="$(printf '%s\n' "${zips[@]}" | sort -V | tail -n 1)"
@@ -82,11 +94,13 @@ jobs:
 
           echo "zipfile=$zipfile" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "should_install=true" >> "$GITHUB_OUTPUT"
 
           echo "Geselecteerd: $zipfile"
-          echo "Productieversie: $version"
+          echo "Versie: $version"
 
       - name: Validate and extract ZIP
+        if: steps.select_zip.outputs.should_install == 'true'
         shell: bash
         env:
           ZIPFILE: ${{ steps.select_zip.outputs.zipfile }}
@@ -95,7 +109,6 @@ jobs:
 
           rm -rf .install-mijn-recepten
           mkdir -p .install-mijn-recepten
-
           unzip -q "$ZIPFILE" -d .install-mijn-recepten
 
           if [[ -f .install-mijn-recepten/index.html ]]; then
@@ -115,26 +128,14 @@ jobs:
             src="$(dirname "${candidates[0]}")"
           fi
 
-          for file in \
-            index.html \
-            styles.css \
-            app.js \
-            manifest.webmanifest \
-            sw.js \
-            README.md
-          do
+          for file in index.html styles.css app.js manifest.webmanifest sw.js README.md; do
             if [[ ! -f "$src/$file" ]]; then
               echo "Verplicht appbestand ontbreekt: $file"
               exit 1
             fi
           done
 
-          for file in \
-            icons/icon-192.png \
-            icons/icon-512.png \
-            icons/apple-touch-icon.png \
-            icons/favicon.png
-          do
+          for file in icons/icon-192.png icons/icon-512.png icons/apple-touch-icon.png icons/favicon.png; do
             if [[ ! -f "$src/$file" ]]; then
               echo "Verplicht pictogram ontbreekt: $file"
               exit 1
@@ -146,14 +147,12 @@ jobs:
             exit 1
           fi
 
-          if ! find "$src/images/recipes" \
-            -maxdepth 1 -type f -name '*.webp' | grep -q .
-          then
+          find "$src/images/recipes" -maxdepth 1 -type f -name '*.webp' | grep -q . || {
             echo "Geen WebP-receptfoto's gevonden."
             exit 1
-          fi
+          }
 
-          # Controleer of het productie-manifest geldige JSON bevat.
+          # Controleer het productie-manifest.
           python3 - "$src/manifest.webmanifest" <<'PY'
           import json
           import sys
@@ -162,40 +161,28 @@ jobs:
               manifest = json.load(file)
 
           if not manifest.get("name") or not manifest.get("short_name"):
-              raise SystemExit(
-                  "Het manifest moet name en short_name bevatten."
-              )
+              raise SystemExit("Manifest mist name of short_name.")
 
           if "test" in manifest["name"].lower():
-              raise SystemExit(
-                  "Het productie-manifest bevat een testnaam."
-              )
+              raise SystemExit("Testnaam aangetroffen in productie-manifest.")
 
           print("Productiemanifest gecontroleerd.")
           PY
 
-          # Installeer appbestanden.
-          for file in \
-            index.html \
-            styles.css \
-            app.js \
-            manifest.webmanifest \
-            sw.js \
-            README.md
-          do
+          for file in index.html styles.css app.js manifest.webmanifest sw.js README.md; do
             cp "$src/$file" "./$file"
           done
 
-          # Vervang pictogrammen en fotobibliotheek.
           rm -rf ./icons ./images
           cp -R "$src/icons" ./icons
           cp -R "$src/images" ./images
 
           rm -rf .install-mijn-recepten
 
-          echo "Appbestanden, pictogrammen en foto's zijn gecontroleerd en uitgepakt."
+          echo "App, pictogrammen en foto's gevalideerd en uitgepakt."
 
       - name: Commit installed app files and remove ZIP
+        if: steps.select_zip.outputs.should_install == 'true'
         shell: bash
         env:
           ZIPFILE: ${{ steps.select_zip.outputs.zipfile }}
@@ -209,14 +196,8 @@ jobs:
           rm -f "$ZIPFILE"
 
           git add \
-            index.html \
-            styles.css \
-            app.js \
-            manifest.webmanifest \
-            sw.js \
-            README.md \
-            icons/ \
-            images/
+            index.html styles.css app.js manifest.webmanifest \
+            sw.js README.md icons/ images/
 
           git add -u -- "$ZIPFILE"
 
@@ -229,6 +210,7 @@ jobs:
           git push origin main
 
       - name: Create version tag
+        if: steps.select_zip.outputs.should_install == 'true'
         shell: bash
         env:
           VERSION: ${{ steps.select_zip.outputs.version }}
@@ -236,7 +218,6 @@ jobs:
           set -euo pipefail
 
           tag="v${VERSION}"
-
           git fetch --tags origin
 
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
@@ -248,7 +229,14 @@ jobs:
           git push origin "$tag"
 
       - name: Rapportage
+        if: always()
+        env:
+          SHOULD_INSTALL: ${{ steps.select_zip.outputs.should_install }}
         run: |
-          echo "Productie-installatie voltooid."
-          echo "De productie-appbestanden en fotobibliotheek zijn bijgewerkt."
-          echo "De testmap test/ is niet door deze workflow gewijzigd."
+          if [[ "$SHOULD_INSTALL" == "true" ]]; then
+            echo "Productie-installatie uitgevoerd."
+            echo "Appbestanden en fotobibliotheek zijn bijgewerkt."
+          else
+            echo "Geen nieuwe versie-ZIP om te installeren."
+            echo "De bestaande productieapp is niet gewijzigd."
+          fi
