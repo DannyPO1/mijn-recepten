@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: test-mijn-recepten-zip-${{ github.ref }}
@@ -19,7 +20,7 @@ concurrency:
 
 jobs:
   install-test:
-    # Veiligheidscontrole: nooit bestanden naar main installeren.
+    # Veiligheidscontrole: installeer uitsluitend op de ontwerpbranch.
     if: github.ref == 'refs/heads/feature/nieuw-ontwerp'
     runs-on: ubuntu-latest
 
@@ -52,7 +53,9 @@ jobs:
 
           echo "zipfile=$zipfile" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Geselecteerd: $zipfile (testversie $version)"
+
+          echo "Geselecteerd: $zipfile"
+          echo "Testversie: $version"
 
       - name: Valideer en pak ZIP uit
         shell: bash
@@ -70,7 +73,9 @@ jobs:
             src=".install-mijn-recepten"
           else
             mapfile -t candidates < <(
-              find .install-mijn-recepten -mindepth 2 -maxdepth 3 -type f -name index.html
+              find .install-mijn-recepten \
+                -mindepth 2 -maxdepth 3 \
+                -type f -name index.html
             )
 
             if [[ ${#candidates[@]} -ne 1 ]]; then
@@ -88,7 +93,12 @@ jobs:
             fi
           done
 
-          for file in icons/icon-192.png icons/icon-512.png icons/apple-touch-icon.png icons/favicon.png; do
+          for file in \
+            icons/icon-192.png \
+            icons/icon-512.png \
+            icons/apple-touch-icon.png \
+            icons/favicon.png
+          do
             if [[ ! -f "$src/$file" ]]; then
               echo "Verplicht pictogram ontbreekt: $file"
               exit 1
@@ -100,7 +110,9 @@ jobs:
             exit 1
           fi
 
-          if ! find "$src/images/recipes" -maxdepth 1 -type f -name '*.webp' | grep -q .; then
+          if ! find "$src/images/recipes" \
+            -maxdepth 1 -type f -name '*.webp' | grep -q .
+          then
             echo "Geen WebP-foto's gevonden in images/recipes/."
             exit 1
           fi
@@ -117,7 +129,7 @@ jobs:
 
           rm -rf .install-mijn-recepten
 
-          echo "App-bestanden en fotobibliotheek zijn gevalideerd en uitgepakt."
+          echo "App-bestanden, pictogrammen en foto's zijn gevalideerd en uitgepakt."
 
       - name: Commit app en fotobibliotheek naar ontwerpbranch
         shell: bash
@@ -132,7 +144,16 @@ jobs:
 
           rm -f "$ZIPFILE"
 
-          git add index.html styles.css app.js manifest.webmanifest sw.js README.md icons/ images/
+          git add \
+            index.html \
+            styles.css \
+            app.js \
+            manifest.webmanifest \
+            sw.js \
+            README.md \
+            icons/ \
+            images/
+
           git add -u -- "$ZIPFILE"
 
           if git diff --cached --quiet; then
@@ -147,4 +168,18 @@ jobs:
         run: |
           echo "App en fotobibliotheek bijgewerkt op feature/nieuw-ontwerp."
           echo "Er is geen release-tag aangemaakt."
-          echo "De branch main is door deze workflow niet aangepast."
+          echo "De productie-appbestanden in main zijn niet door deze stap aangepast."
+
+      - name: Start publicatieworkflow
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          gh workflow run publish-mijn-recepten-test.yml \
+            --repo "$REPO" \
+            --ref feature/nieuw-ontwerp
+
+          echo "Publicatieworkflow gestart."
