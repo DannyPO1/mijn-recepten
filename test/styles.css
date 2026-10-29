@@ -478,9 +478,26 @@ html[data-theme="dark"] .detail-cover { background: #29372b; }
 .photo-remove-button{grid-column:1;justify-self:start;padding:3px 0}
 
 
-.test-label {
+/* Testversie: versie en label verticaal uitlijnen */
+.test-version-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.test-version-stack [data-app-version] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.test-version-stack .test-label {
   display: inline-block;
-  margin-top: 4px;
+  align-self: center;
+  margin: 0;
   padding: 3px 8px;
   border: 1px solid #b77932;
   border-radius: 999px;
