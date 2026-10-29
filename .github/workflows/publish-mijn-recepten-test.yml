@@ -93,13 +93,16 @@ jobs:
 
           touch test/.nojekyll
 
-          # Pas alleen de manifestnaam van de testapp aan.
+          # Geef uitsluitend de testapp een eigen manifestnaam.
           python3 - <<'PY'
           import json
           from pathlib import Path
+          import re
 
           manifest_path = Path("test/manifest.webmanifest")
-          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest = json.loads(
+              manifest_path.read_text(encoding="utf-8")
+          )
           manifest["name"] = "Mijn Recepten test"
           manifest["short_name"] = "Recepten test"
           manifest_path.write_text(
@@ -107,43 +110,72 @@ jobs:
               encoding="utf-8"
           )
 
-          # Voeg TEST toe direct onder het versienummer in de topbar.
+          # Voeg de TEST-badge toe direct na het versie-element.
           html_path = Path("test/index.html")
           html = html_path.read_text(encoding="utf-8")
 
-          import re
+          # Verwijder eventuele eerder toegevoegde badges.
+          html = re.sub(
+              r'\s*<span class="test-label">TEST</span>',
+              '',
+              html
+          )
 
-          pattern = r'(<[^>]*data-app-version[^>]*>.*?</[^>]+>)'
+          # Vind het versie-element in de topbar.
+          pattern = (
+              r'(<([a-zA-Z][\w-]*)\b'
+              r'(?=[^>]*\bdata-app-version\b)'
+              r'[^>]*>)(.*?)(</\2>)'
+          )
           match = re.search(pattern, html, flags=re.DOTALL)
 
           if not match:
               raise SystemExit(
-                  "Versie-element niet gevonden in index.html; publicatie afgebroken."
+                  "Versie-element niet gevonden in index.html. "
+                  "Publicatie afgebroken."
               )
 
-          following = html[match.end():]
-          if not re.match(
-              r'\s*<[^>]*class=["\'][^"\']*\btest-label\b',
-              following
-          ):
-              html = (
-                  html[:match.end()]
-                  + '\n<span class="test-label">TEST</span>'
-                  + html[match.end():]
-              )
+          opening, tag, content, closing = match.groups()
 
+          # Plaats versie en TEST in dezelfde verticale container.
+          replacement = (
+              '<span class="test-version-stack">'
+              + opening
+              + content
+              + closing
+              + '<span class="test-label">TEST</span>'
+              + '</span>'
+          )
+
+          html = html[:match.start()] + replacement + html[match.end():]
           html_path.write_text(html, encoding="utf-8")
 
-          # Voeg styling toe aan uitsluitend de testversie.
+          # Styling uitsluitend in de testversie.
           css_path = Path("test/styles.css")
           css = css_path.read_text(encoding="utf-8")
 
-          if ".test-label" not in css:
-              css += """
+          css += """
 
-          .test-label {
+          /* Testversie: versie en label verticaal uitlijnen */
+          .test-version-stack {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
+            flex-shrink: 0;
+          }
+
+          .test-version-stack [data-app-version] {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .test-version-stack .test-label {
             display: inline-block;
-            margin-top: 4px;
+            align-self: center;
+            margin: 0;
             padding: 3px 8px;
             border: 1px solid #b77932;
             border-radius: 999px;
@@ -155,9 +187,10 @@ jobs:
             line-height: 1.4;
           }
           """
-              css_path.write_text(css, encoding="utf-8")
 
-          print("Testmanifest en TEST-label ingesteld.")
+          css_path.write_text(css, encoding="utf-8")
+
+          print("Manifestnaam en verticale TEST-badge ingesteld.")
           PY
 
           git config user.name "github-actions[bot]"
@@ -176,5 +209,5 @@ jobs:
       - name: Rapportage
         run: |
           echo "Testapp gepubliceerd in test/."
-          echo "De testapp heeft een eigen manifestnaam en TEST-label."
+          echo "TEST staat onder het versienummer."
           echo "Productiebestanden in de hoofdmap zijn niet gewijzigd."
