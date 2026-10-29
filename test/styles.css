@@ -431,3 +431,39 @@ html[data-theme="dark"] .detail-cover { background: #29372b; }
   .tab-icon { width: 42px; }
   .tab small { font-size: 9px; }
 }
+
+/* v1.7.6 — compact day labels and polished add-recipe action */
+.day-label { min-height: 64px; }
+.day-label strong { font-size: 13px; letter-spacing: .06em; }
+.day-label small { display: none !important; }
+#addRecipeTop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 52px;
+  min-width: 154px;
+  padding: 0 20px;
+  border-radius: 999px;
+  white-space: nowrap;
+  line-height: 1;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(48, 85, 62, .14);
+}
+#addRecipeTop span:first-child {
+  display: inline-grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.16);
+  font-size: 21px;
+  font-weight: 400;
+}
+#addRecipeTop span:last-child { display: inline-block; }
+@media (max-width: 420px) {
+  .page-heading { gap: 12px; align-items: center; }
+  #addRecipeTop { min-width: 0; min-height: 48px; padding: 0 15px; font-size: 12px; flex-shrink: 0; }
+  #addRecipeTop span:first-child { width: 22px; height: 22px; }
+}

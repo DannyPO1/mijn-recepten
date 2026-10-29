@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.7.5';
+  const APP_VERSION = '1.7.6';
   const DB_NAME = 'mijn-recepten-test-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -185,7 +185,7 @@
   function renderWeek() {
     $('weekDays').innerHTML = days.map(d=>{
       const meal = state.week[d.key]; const recipe = meal && state.recipes.find(r=>r.id===meal.recipeId);
-      return `<div class="week-day ${recipe?'has-recipe':'is-empty'}"><div class="day-label"><strong>${d.label}</strong><small>${d.short}</small></div><div class="week-meal">${recipe?`<img class="week-recipe-thumb" src="${recipePhoto(recipe)}" alt="" loading="lazy" onerror="this.style.display='none'"><div class="week-meal-copy"><strong>${esc(recipe.name)}</strong><small>${esc(recipe.category||'Gerecht')} · ${meal.servings} personen · ${totalMinutes(recipe)} min.</small></div>`:`<div class="week-empty-art" aria-hidden="true">＋</div><div class="week-meal-copy"><strong class="muted">Nog niets gepland</strong><small>Voeg een gerecht toe</small></div>`}</div><button class="day-add" data-week-day="${d.key}" aria-label="${recipe?'Wijzig':'Voeg toe'} op ${d.label}">${recipe?'⋯':'＋'}</button></div>`;
+      return `<div class="week-day ${recipe?'has-recipe':'is-empty'}"><div class="day-label"><strong>${d.short}</strong></div><div class="week-meal">${recipe?`<img class="week-recipe-thumb" src="${recipePhoto(recipe)}" alt="" loading="lazy" onerror="this.style.display='none'"><div class="week-meal-copy"><strong>${esc(recipe.name)}</strong><small>${esc(recipe.category||'Gerecht')} · ${meal.servings} personen · ${totalMinutes(recipe)} min.</small></div>`:`<div class="week-empty-art" aria-hidden="true">＋</div><div class="week-meal-copy"><strong class="muted">Nog niets gepland</strong><small>Voeg een gerecht toe</small></div>`}</div><button class="day-add" data-week-day="${d.key}" aria-label="${recipe?'Wijzig':'Voeg toe'} op ${d.label}">${recipe?'⋯':'＋'}</button></div>`;
     }).join('');
   }
   function openWeekPicker(dayKey, recipeId='') {
