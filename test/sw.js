@@ -1,5 +1,5 @@
-const CACHE_NAME = 'mijn-recepten-test-v1.7.6';
-const APP_SHELL = ['./', './index.html', './styles.css?v=1.7.6', './app.js?v=1.7.6', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png'];
+const CACHE_NAME = 'mijn-recepten-v1.7.8';
+const APP_SHELL = ['./', './index.html', './styles.css?v=1.7.8', './app.js?v=1.7.8', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png', './images/recipes/havermout-bananenpannenkoeken.webp', './images/recipes/mexicaanse-vulling.webp', './images/recipes/kip-met-rijst.webp', './images/recipes/kip-wraps.webp', './images/recipes/pasta-bolognese.webp', './images/recipes/pasta-carbonara.webp', './images/recipes/noedels-kip.webp', './images/recipes/kip-curry.webp', './images/recipes/groentesoep.webp', './images/recipes/linzencurry.webp', './images/recipes/shakshuka.webp', './images/recipes/zalm-met-rijst.webp', './images/recipes/tonijnsalade.webp', './images/recipes/quinoa-bowl.webp', './images/recipes/aardappelen-groente-kip.webp', './images/recipes/smoothie-bowl.webp', './images/recipes/omelet-groente.webp', './images/recipes/hamburgers.webp', './images/recipes/falafel-wraps.webp', './images/recipes/linzensoep.webp', './images/recipes/kwark-met-fruit.webp'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -17,7 +17,7 @@ self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(keys
-      .filter(key => key.startsWith('mijn-recepten-test-') && key !== CACHE_NAME)
+      .filter(key => key.startsWith('mijn-recepten-') && key !== CACHE_NAME)
       .map(key => caches.delete(key)));
     await self.clients.claim();
   })());
