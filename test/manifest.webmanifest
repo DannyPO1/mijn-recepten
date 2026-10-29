@@ -1,6 +1,6 @@
 {
-  "name": "Mijn Recepten",
-  "short_name": "Recepten",
+  "name": "Mijn Recepten test",
+  "short_name": "Recepten test",
   "description": "Persoonlijk receptenboek, weekmenu en boodschappenlijst",
   "lang": "nl-NL",
   "start_url": "./index.html",
