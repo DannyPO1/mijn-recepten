@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   install-test:
-    # Safety guard: this workflow must never install files into main.
+    # Veiligheidscontrole: nooit bestanden naar main installeren.
     if: github.ref == 'refs/heads/feature/nieuw-ontwerp'
     runs-on: ubuntu-latest
 
@@ -47,39 +47,46 @@ jobs:
               git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" -- 'MijnRecepten-iPhone-v*.zip' |
               grep -E '^MijnRecepten-iPhone-v[0-9]+\.[0-9]+\.[0-9]+\.zip$' || true
             )
+
             if [[ ${#changed_zips[@]} -ne 1 ]]; then
-              echo "Upload exactly one version ZIP per commit."
+              echo "Upload precies één versie-ZIP per commit."
               exit 1
             fi
+
             zipfile="${changed_zips[0]}"
           else
             zips=(MijnRecepten-iPhone-v*.zip)
+
             if [[ ${#zips[@]} -eq 0 ]]; then
-              echo "No version ZIP found in the repository root."
+              echo "Geen versie-ZIP gevonden in de hoofdmap."
               exit 1
             fi
+
             zipfile="$(printf '%s\n' "${zips[@]}" | sort -V | tail -n 1)"
           fi
 
           if [[ ! -f "$zipfile" ]]; then
-            echo "Selected ZIP does not exist: $zipfile"
+            echo "ZIP-bestand bestaat niet: $zipfile"
             exit 1
           fi
 
           version="${zipfile#MijnRecepten-iPhone-v}"
           version="${version%.zip}"
+
           echo "zipfile=$zipfile" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Selected $zipfile (test version $version; no release tag will be created)"
+          echo "Geselecteerd: $zipfile (testversie $version)"
 
-      - name: Validate and extract ZIP
+      - name: Valideer en pak ZIP uit
         shell: bash
         env:
           ZIPFILE: ${{ steps.select_zip.outputs.zipfile }}
         run: |
           set -euo pipefail
+
           rm -rf .install-mijn-recepten
           mkdir -p .install-mijn-recepten
+
           unzip -q "$ZIPFILE" -d .install-mijn-recepten
 
           if [[ -f .install-mijn-recepten/index.html ]]; then
@@ -88,26 +95,38 @@ jobs:
             mapfile -t candidates < <(
               find .install-mijn-recepten -mindepth 2 -maxdepth 3 -type f -name index.html
             )
+
             if [[ ${#candidates[@]} -ne 1 ]]; then
-              echo "ZIP must contain one index.html at the root or one folder deep."
+              echo "ZIP moet één index.html bevatten in de hoofdmap of één mapniveau lager."
               exit 1
             fi
+
             src="$(dirname "${candidates[0]}")"
           fi
 
           for file in index.html styles.css app.js manifest.webmanifest sw.js README.md; do
             if [[ ! -f "$src/$file" ]]; then
-              echo "Required app file missing: $file"
+              echo "Verplicht bestand ontbreekt: $file"
               exit 1
             fi
           done
 
           for file in icons/icon-192.png icons/icon-512.png icons/apple-touch-icon.png icons/favicon.png; do
             if [[ ! -f "$src/$file" ]]; then
-              echo "Required icon file missing: $file"
+              echo "Verplicht pictogram ontbreekt: $file"
               exit 1
             fi
           done
+
+          if [[ ! -d "$src/images/recipes" ]]; then
+            echo "Fotobibliotheek ontbreekt: images/recipes/"
+            exit 1
+          fi
+
+          if ! find "$src/images/recipes" -maxdepth 1 -type f -name '*.webp' | grep -q .; then
+            echo "Geen WebP-foto's gevonden in images/recipes/."
+            exit 1
+          fi
 
           for file in index.html styles.css app.js manifest.webmanifest sw.js README.md; do
             cp "$src/$file" "./$file"
@@ -115,31 +134,40 @@ jobs:
 
           rm -rf ./icons
           cp -R "$src/icons" ./icons
+
+          rm -rf ./images
+          cp -R "$src/images" ./images
+
           rm -rf .install-mijn-recepten
 
-      - name: Commit app files to ontwerpbranch and remove ZIP
+          echo "App-bestanden en fotobibliotheek zijn gevalideerd en uitgepakt."
+
+      - name: Commit app en fotobibliotheek naar ontwerpbranch
         shell: bash
         env:
           ZIPFILE: ${{ steps.select_zip.outputs.zipfile }}
           VERSION: ${{ steps.select_zip.outputs.version }}
         run: |
           set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           rm -f "$ZIPFILE"
-          git add index.html styles.css app.js manifest.webmanifest sw.js README.md icons/
+
+          git add index.html styles.css app.js manifest.webmanifest sw.js README.md icons/ images/
           git add -u -- "$ZIPFILE"
 
           if git diff --cached --quiet; then
-            echo "No app changes to commit."
+            echo "Geen wijzigingen gevonden om te committen."
             exit 1
           fi
 
           git commit -m "Test ontwerp Mijn Recepten v${VERSION}"
           git push origin feature/nieuw-ontwerp
 
-      - name: Report test installation
+      - name: Rapportage
         run: |
-          echo "Testbestanden zijn bijgewerkt op feature/nieuw-ontwerp."
-          echo "Er is geen release-tag aangemaakt en main is niet aangepast."
+          echo "App en fotobibliotheek bijgewerkt op feature/nieuw-ontwerp."
+          echo "Er is geen release-tag aangemaakt."
+          echo "De branch main is door deze workflow niet aangepast."
