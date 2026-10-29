@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f7f5ef" id="themeColorMeta">
+  <meta name="theme-color" content="#f5f0e6" id="themeColorMeta">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -11,14 +11,14 @@
   <meta name="description" content="Jouw persoonlijke receptenboek, weekmenu en boodschappenlijst.">
   <title>Mijn Recepten</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=1.5.5">
+  <link rel="stylesheet" href="styles.css?v=1.7.8">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <img class="brand-mark" src="icons/icon-192.png" alt="" aria-hidden="true">
       <div class="brand-copy"><p class="eyebrow">JOUW PERSOONLIJKE KOOKBOEK</p><h1>Mijn Recepten</h1></div>
-      <span class="app-version" data-app-version aria-label="Appversie 1.5.5">v1.5.5</span>
+      <span class="app-version" data-app-version aria-label="Appversie 1.7.8">v1.7.8</span>
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Donkere modus inschakelen" title="Donkere modus inschakelen"><span id="themeToggleIcon" aria-hidden="true">☾</span></button>
     </header>
 
@@ -29,10 +29,18 @@
           <div class="hero-illustration" aria-hidden="true">✳</div>
         </div>
         <div class="quick-grid">
-          <button class="quick-card" data-nav="recipes"><span class="quick-icon">▤</span><strong>Mijn recepten</strong><small id="recipeCount">0 recepten</small></button>
-          <button class="quick-card" data-nav="week"><span class="quick-icon">▦</span><strong>Weekmenu</strong><small>Plan je maaltijden</small></button>
-          <button class="quick-card" data-nav="shopping"><span class="quick-icon">☷</span><strong>Boodschappen</strong><small id="shoppingCount">0 artikelen</small></button>
-          <button class="quick-card" data-nav="backup"><span class="quick-icon">↥</span><strong>Back-up</strong><small>Bewaar in iCloud Drive</small></button>
+          <button class="quick-card quick-card-recipes" data-nav="recipes" aria-label="Mijn recepten">
+            <span class="quick-card-copy"><strong>Mijn recepten</strong><small id="recipeCount">0 recepten</small></span>
+          </button>
+          <button class="quick-card quick-card-week" data-nav="week" aria-label="Weekmenu">
+            <span class="quick-card-copy"><strong>Weekmenu</strong><small>Plan je maaltijden</small></span>
+          </button>
+          <button class="quick-card quick-card-shopping" data-nav="shopping" aria-label="Boodschappen">
+            <span class="quick-card-copy"><strong>Boodschappen</strong><small id="shoppingCount">0 artikelen</small></span>
+          </button>
+          <button class="quick-card quick-card-backup" data-nav="backup" aria-label="Back-up">
+            <span class="quick-card-copy"><strong>Back-up</strong><small>Bewaar in iCloud Drive</small></span>
+          </button>
         </div>
         <div class="section-heading"><div><p class="eyebrow">JOUW COLLECTIE</p><h2>Recent toegevoegd</h2></div><button class="text-button" data-nav="recipes">Alles bekijken →</button></div>
         <div id="recentRecipes" class="recipe-grid"></div>
@@ -40,7 +48,7 @@
       </section>
 
       <section class="view" id="view-recipes" aria-labelledby="recipesTitle">
-        <div class="page-heading"><div><p class="eyebrow">JOUW COLLECTIE</p><h2 id="recipesTitle">Recepten</h2><p class="muted">Alles op één plek, helemaal aanpasbaar.</p></div><button class="primary-button" id="addRecipeTop">＋ Nieuw recept</button></div>
+        <div class="page-heading"><div><p class="eyebrow">JOUW COLLECTIE</p><h2 id="recipesTitle">Recepten</h2><p class="muted">Alles op één plek, helemaal aanpasbaar.</p></div><button class="primary-button" id="addRecipeTop"><span aria-hidden="true">＋</span><span>Recept toevoegen</span></button></div>
         <label class="searchbox"><span>⌕</span><input id="recipeSearch" type="search" placeholder="Zoek op gerecht of ingrediënt…" autocomplete="off"></label>
         <div class="filter-row" id="categoryFilters"></div>
         <div id="allRecipes" class="recipe-grid"></div>
@@ -48,12 +56,16 @@
       </section>
 
       <section class="view" id="view-week" aria-labelledby="weekTitle">
+        <div class="week-hero" role="img" aria-label="Een tafel met verschillende gerechten"><div><p class="eyebrow">IETS LEKKERS OP DE PLANNING</p><h2>Een smakelijke week.</h2><p>Kies je gerechten en maak plannen voor de komende dagen.</p></div></div>
         <div class="page-heading"><div><p class="eyebrow">VOORUIT PLANNEN</p><h2 id="weekTitle">Weekmenu</h2><p class="muted">Kies een gerecht voor iedere dag.</p></div><button class="secondary-button" id="clearWeek">Leegmaken</button></div>
         <div id="weekDays" class="week-list"></div>
         <div class="bottom-action"><div><strong>Alles op je boodschappenlijst?</strong><p class="muted">Combineer de ingrediënten uit je weekmenu.</p></div><button class="primary-button" id="makeWeekList">Maak lijst →</button></div>
       </section>
 
       <section class="view" id="view-shopping" aria-labelledby="shoppingTitle">
+        <div class="shopping-hero" role="img" aria-label="Verse ingrediënten op een houten tafel">
+          <div><p class="eyebrow">VERS & GOED VOORBEREID</p><h2>Alles op je lijstje.</h2><p>Een beetje plannen, heerlijk koken.</p></div>
+        </div>
         <div class="page-heading"><div><p class="eyebrow">KLAAR OM TE WINKELEN</p><h2 id="shoppingTitle">Boodschappen</h2><p class="muted">Gecombineerd uit je geselecteerde recepten.</p></div><button class="secondary-button" id="clearShopping">Wissen</button></div>
         <div class="shopping-summary"><div><span class="summary-number" id="shoppingTotal">0</span><span class="muted"> artikelen</span></div><div><span class="summary-number" id="shoppingDone">0</span><span class="muted"> afgevinkt</span></div></div>
         <div id="shoppingItems" class="shopping-groups"></div>
@@ -63,7 +75,7 @@
       </section>
 
       <section class="view" id="view-backup" aria-labelledby="backupTitle">
-        <div class="page-heading"><div><p class="eyebrow">JOUW GEGEVENS</p><h2 id="backupTitle">Back-up & herstel</h2><p class="muted">Bewaar zelf een kopie in iCloud Drive.</p><p class="helper-text">Appversie <span data-app-version>1.5.5</span></p></div><div class="backup-icon">↥</div></div>
+        <div class="page-heading"><div><p class="eyebrow">JOUW GEGEVENS</p><h2 id="backupTitle">Back-up & herstel</h2><p class="muted">Bewaar zelf een kopie in iCloud Drive.</p><p class="helper-text">Appversie <span data-app-version>1.7.8</span></p></div><div class="backup-icon">↥</div></div>
         <div class="backup-card"><div class="backup-symbol">↓</div><h3>Back-up maken</h3><p>Download je recepten, weekmenu en boodschappen als één JSON-bestand. Sla het bestand daarna op in iCloud Drive via de Bestanden-app.</p><button class="primary-button full-width" id="exportBackup">Download back-upbestand</button></div>
         <div class="backup-card"><div class="backup-symbol">↑</div><h3>Back-up terugzetten</h3><p>Importeer een eerder gemaakt back-upbestand. Je kunt bestaande gegevens vervangen of de recepten samenvoegen.</p><label class="file-button full-width">Kies back-upbestand<input id="importFile" type="file" accept="application/json,.json"></label><div id="importOptions" class="import-options hidden"><p id="importSummary"></p><div class="button-row"><button class="secondary-button" id="mergeImport">Samenvoegen</button><button class="danger-button" id="replaceImport">Alles vervangen</button></div></div></div>
         <div class="backup-card"><div class="backup-symbol">✳</div><h3>Recepten importeren vanuit ChatGPT</h3><p>Vraag ChatGPT om een JSON-receptenbestand voor Mijn Recepten. Kies dat bestand hier. Alleen recepten worden geïmporteerd; je weekmenu en boodschappen blijven ongewijzigd.</p><label class="file-button full-width">Kies receptenbestand (.json)<input id="recipeImportFile" type="file" accept="application/json,.json"></label><div id="recipeImportOptions" class="import-options hidden"><p id="recipeImportSummary"></p><div class="button-row"><button class="secondary-button" id="importNewRecipes">Alleen nieuwe toevoegen</button><button class="primary-button" id="updateImportedRecipes">Importeren / bijwerken</button></div></div><p class="helper-text">Dubbele recepten worden herkend op naam. ‘Alleen nieuwe toevoegen’ slaat bestaande namen over; ‘Importeren / bijwerken’ werkt bestaande recepten met dezelfde naam bij.</p></div>
@@ -72,11 +84,11 @@
     </main>
 
     <nav class="tabbar" aria-label="Hoofdnavigatie">
-      <button class="tab active" data-nav="home"><span>⌂</span><small>Home</small></button>
-      <button class="tab" data-nav="recipes"><span>▤</span><small>Recepten</small></button>
-      <button class="tab" data-nav="week"><span>▦</span><small>Weekmenu</small></button>
-      <button class="tab" data-nav="shopping"><span>☷</span><small>Boodschappen</small></button>
-      <button class="tab" data-nav="backup"><span>↥</span><small>Back-up</small></button>
+      <button class="tab active" data-nav="home"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5.5 9v11h13V9M9.5 20v-6h5v6"/></svg></span><small>Home</small></button>
+      <button class="tab" data-nav="recipes"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H20v18H7.5A2.5 2.5 0 0 0 5 22z"/><path d="M5 4.5v15A2.5 2.5 0 0 1 7.5 17H20M9 6h7M9 10h7"/></svg></span><small>Recepten</small></button>
+      <button class="tab" data-nav="week"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 9h18M8 13h2M14 13h2M8 17h2M14 17h2"/></svg></span><small>Weekmenu</small></button>
+      <button class="tab" data-nav="shopping"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.5L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg></span><small>Boodschappen</small></button>
+      <button class="tab" data-nav="backup"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5"/><path d="M5 14v6h14v-6"/></svg></span><small>Back-up</small></button>
     </nav>
   </div>
 
@@ -88,6 +100,12 @@
       <div class="two-columns"><label class="field-label">Categorie<select id="recipeCategory"><option>Avondeten</option><option>Ontbijt</option><option>Lunch</option><option>Mealprep</option><option>Snack</option><option>Kinderen</option><option>Bijgerecht</option><option>Mexicaans</option><option>Rijst &amp; Bowls</option><option>Wraps &amp; Flatbreads</option><option>Pasta</option><option>Salades</option><option>Kip</option><option>Overig</option></select></label><label class="field-label">Porties<input id="recipeServings" type="number" min="1" max="100" value="2" required></label></div>
       <div class="two-columns"><label class="field-label">Voorbereiding (min.)<input id="recipePrep" type="number" min="0" max="999" value="10"></label><label class="field-label">Bereiding (min.)<input id="recipeCook" type="number" min="0" max="999" value="20"></label></div>
       <label class="field-label">Korte omschrijving<textarea id="recipeDescription" rows="2" placeholder="Wat maakt dit gerecht lekker?"></textarea></label>
+      <div class="recipe-photo-editor">
+        <div><strong>Foto van het gerecht</strong><p class="muted">Kies een foto uit Foto’s. De afbeelding wordt verkleind en bij dit recept op je iPhone bewaard.</p></div>
+        <img id="recipePhotoPreview" class="recipe-photo-preview" alt="Voorbeeld van de gerechtfoto">
+        <label class="secondary-button photo-pick-button">Kies foto<input id="recipePhotoInput" type="file" accept="image/*"></label>
+        <button type="button" class="text-button photo-remove-button" id="removeRecipePhoto">Eigen foto verwijderen</button>
+      </div>
       <div class="subform-heading"><div><h3>Ingrediënten</h3><p class="muted">Hoeveelheid en eenheid zijn optioneel.</p></div><button type="button" class="small-button" id="addIngredient">＋ Ingrediënt</button></div>
       <div id="ingredientEditor" class="ingredient-editor"></div>
       <div class="subform-heading"><div><h3>Bereidingsstappen</h3><p class="muted">Eén stap per regel.</p></div><button type="button" class="small-button" id="addStep">＋ Stap</button></div>
@@ -100,6 +118,6 @@
   <dialog id="detailDialog" class="modal detail-modal"><div id="recipeDetail"></div></dialog>
   <dialog id="weekPickerDialog" class="modal"><form method="dialog" id="weekPickerForm"><div class="modal-header"><div><p class="eyebrow">WEEKMENU</p><h2>Maaltijd plannen</h2></div><button type="button" class="icon-button" id="closeWeekPicker">×</button></div><input type="hidden" id="weekDayKey"><label class="field-label">Kies een recept<select id="weekRecipeSelect"></select></label><label class="field-label">Aantal personen<input id="weekServings" type="number" min="1" max="100" value="2"></label><div class="button-row modal-actions"><button type="button" class="secondary-button" id="removeWeekMeal">Verwijderen</button><button type="submit" class="primary-button">Opslaan</button></div></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=1.5.5"></script>
+  <script src="app.js?v=1.7.8"></script>
 </body>
 </html>

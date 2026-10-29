@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.5.5';
+  const APP_VERSION = '1.7.8';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -99,9 +99,38 @@
   function recipeIcon(category) { return ({'Ontbijt':'🥞','Lunch':'🥪','Avondeten':'🍽️','Mealprep':'🥡','Snack':'🍎','Overig':'✨','Kinderen':'🧒','Bijgerecht':'🥕','Mexicaans':'🌮','Rijst & Bowls':'🍚','Wraps & Flatbreads':'🌯','Pasta':'🍝','Salades':'🥗','Kip':'🍗'})[category] || '🍴'; }
   function categoryLabel(category) { return `${recipeIcon(category)} ${category || 'Overig'}`; }
   function totalMinutes(recipe) { return (Number(recipe.prep)||0) + (Number(recipe.cook)||0); }
+  function recipePhoto(recipe) {
+    if (recipe?.photoDataUrl) return recipe.photoDataUrl;
+    const name = (recipe?.name || '').toLocaleLowerCase('nl');
+    const category = (recipe?.category || '').toLocaleLowerCase('nl');
+    const asset = (file) => `images/recipes/${file}.webp`;
+    if (name.includes('pannenkoek') || name.includes('havermout')) return asset('havermout-bananenpannenkoeken');
+    if (name.includes('mexica') || name.includes('taco') || name.includes('chili')) return asset('mexicaanse-vulling');
+    if (name.includes('wrap') || name.includes('flatbread')) return asset('kip-wraps');
+    if (name.includes('kip') && (name.includes('rijst') || category.includes('rijst'))) return asset('kip-met-rijst');
+    if (name.includes('kip') || category.includes('kip')) return asset('kip-curry');
+    if (name.includes('carbonara')) return asset('pasta-carbonara');
+    if (name.includes('pasta') || name.includes('bolognese') || category.includes('pasta')) return asset('pasta-bolognese');
+    if (name.includes('noedel')) return asset('noedels-kip');
+    if (name.includes('zalm')) return asset('zalm-met-rijst');
+    if (name.includes('tonijn')) return asset('tonijnsalade');
+    if (name.includes('salade') || category.includes('salade')) return asset('tonijnsalade');
+    if (name.includes('soep')) return asset(name.includes('linzen') ? 'linzensoep' : 'groentesoep');
+    if (name.includes('linzen') || name.includes('curry')) return asset('linzencurry');
+    if (name.includes('omelet') || category.includes('ontbijt')) return asset('omelet-groente');
+    if (name.includes('burger')) return asset('hamburgers');
+    if (name.includes('falafel')) return asset('falafel-wraps');
+    if (name.includes('kwark') || name.includes('fruit')) return asset('kwark-met-fruit');
+    if (name.includes('aardappel') || name.includes('groente')) return asset('aardappelen-groente-kip');
+    if (name.includes('rijst') || name.includes('bowl') || category.includes('rijst')) return asset('quinoa-bowl');
+    if (name.includes('smoothie')) return asset('smoothie-bowl');
+    if (name.includes('shakshuka') || category.includes('mexicaans')) return asset('shakshuka');
+    return asset('quinoa-bowl');
+  }
   function renderCard(recipe) {
     const ingredientCount = (recipe.ingredients || []).filter(i => i.name && i.name.trim()).length;
-    return `<article class="recipe-card" data-open-recipe="${esc(recipe.id)}" tabindex="0" role="button" aria-label="Open ${esc(recipe.name)}"><div class="recipe-art"><span class="category-pill">${esc(recipe.category || 'Overig')}</span><span>${recipeIcon(recipe.category)}</span></div><div class="recipe-card-body"><h3>${esc(recipe.name)}</h3><p class="recipe-description">${esc(recipe.description || (ingredientCount ? ingredientCount + ' ingrediënten' : 'Recept nog aanvullen'))}</p><div class="recipe-meta"><span>◷ ${totalMinutes(recipe)} min.</span><span>♧ ${Number(recipe.servings)||1} porties</span></div></div></article>`;
+    const photo = recipePhoto(recipe);
+    return `<article class="recipe-card" data-open-recipe="${esc(recipe.id)}" tabindex="0" role="button" aria-label="Open ${esc(recipe.name)}"><div class="recipe-art"><img class="recipe-photo" src="${photo}" alt="" loading="lazy" onerror="this.style.display='none'"><span class="category-pill">${esc(recipe.category || 'Overig')}</span></div><div class="recipe-card-body"><h3>${esc(recipe.name)}</h3><p class="recipe-description">${esc(recipe.description || (ingredientCount ? ingredientCount + ' ingrediënten' : 'Recept nog aanvullen'))}</p><div class="recipe-meta"><span>◷ ${totalMinutes(recipe)} min.</span><span>♧ ${Number(recipe.servings)||1} porties</span></div></div></article>`;
   }
   function renderHome() {
     $('recipeCount').textContent = `${state.recipes.length} ${state.recipes.length === 1 ? 'recept' : 'recepten'}`;
@@ -111,7 +140,7 @@
   }
   function renderFilters() {
     const categories = ['Alles',...new Set(state.recipes.map(r=>r.category || 'Overig'))];
-    $('categoryFilters').innerHTML = categories.map(c=>`<button class="filter-chip ${activeCategory===c?'active':''}" data-category="${esc(c)}">${c==='Alles'?'▦':recipeIcon(c)} ${esc(c)}</button>`).join('');
+    $('categoryFilters').innerHTML = categories.map(c=>`<button class="filter-chip ${activeCategory===c?'active':''}" data-category="${esc(c)}">${esc(c)}</button>`).join('');
   }
   function renderRecipes() {
     renderFilters();
@@ -129,6 +158,10 @@
     $('recipeServings').value = recipe?.servings || 2;
     $('recipePrep').value = recipe?.prep ?? 10; $('recipeCook').value = recipe?.cook ?? 20;
     $('recipeDescription').value = recipe?.description || ''; $('recipeNotes').value = recipe?.notes || '';
+    $('recipePhotoInput').value = ''; $('removeRecipePhoto').dataset.remove = 'false';
+    $('recipePhotoPreview').src = recipe?.photoDataUrl || recipePhoto(recipe || {name:'',category:'Avondeten'});
+    $('recipePhotoPreview').classList.remove('hidden');
+    $('removeRecipePhoto').classList.toggle('hidden', !recipe?.photoDataUrl);
     $('ingredientEditor').innerHTML = ''; $('stepEditor').innerHTML = '';
     (recipe?.ingredients?.length ? recipe.ingredients : [{name:'',qty:'',unit:''}]).forEach(addIngredientRow);
     (recipe?.steps?.length ? recipe.steps : [{text:''}]).forEach(addStepRow);
@@ -147,21 +180,39 @@
     $('stepEditor').appendChild(row);
   }
   function renumberSteps() { [...$('stepEditor').children].forEach((r,i)=>r.querySelector('.step-number').textContent=i+1); }
+  async function imageFileToDataUrl(file) {
+    if (!file) return null;
+    if (!file.type.startsWith('image/')) throw new Error('Kies een afbeeldingsbestand.');
+    const source = await new Promise((resolve, reject) => {
+      const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('De foto kon niet worden gelezen.')); reader.readAsDataURL(file);
+    });
+    const image = await new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(new Error('Deze foto kan niet worden geopend.')); img.src = source; });
+    const maxSide = 1000, scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+    const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.round(image.width * scale)); canvas.height = Math.max(1, Math.round(image.height * scale));
+    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.82);
+  }
   async function saveRecipe(event) {
     event.preventDefault();
     const id = $('recipeId').value || uid();
     const old = state.recipes.find(r=>r.id===id);
     const ingredients = [...$('ingredientEditor').querySelectorAll('.ingredient-row')].map(row=>({id:uid(),name:row.querySelector('.ing-name').value.trim(),qty:row.querySelector('.ing-qty').value.trim(),unit:row.querySelector('.ing-unit').value.trim(),optional:false})).filter(i=>i.name);
     const steps = [...$('stepEditor').querySelectorAll('.step-row')].map(row=>({id:uid(),text:row.querySelector('.step-text').value.trim()})).filter(s=>s.text);
-    const recipe = {id,name:$('recipeName').value.trim(),category:$('recipeCategory').value,servings:Math.max(1,Number($('recipeServings').value)||1),prep:Math.max(0,Number($('recipePrep').value)||0),cook:Math.max(0,Number($('recipeCook').value)||0),description:$('recipeDescription').value.trim(),ingredients,steps,notes:$('recipeNotes').value.trim(),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
-    if (!recipe.name) return;
+    if (! $('recipeName').value.trim()) return;
+    let photoDataUrl = old?.photoDataUrl || '';
+    try {
+      if ($('removeRecipePhoto').dataset.remove === 'true') photoDataUrl = '';
+      const file = $('recipePhotoInput').files?.[0];
+      if (file) photoDataUrl = await imageFileToDataUrl(file);
+    } catch (error) { showToast(error.message || 'Foto kon niet worden verwerkt.'); return; }
+    const recipe = {id,name:$('recipeName').value.trim(),category:$('recipeCategory').value,servings:Math.max(1,Number($('recipeServings').value)||1),prep:Math.max(0,Number($('recipePrep').value)||0),cook:Math.max(0,Number($('recipeCook').value)||0),description:$('recipeDescription').value.trim(),ingredients,steps,notes:$('recipeNotes').value.trim(),photoDataUrl,createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
     if (old) state.recipes = state.recipes.map(r=>r.id===id?recipe:r); else state.recipes.unshift(recipe);
     await persist(); $('recipeDialog').close(); renderAll(); showToast(old?'Recept bijgewerkt':'Recept opgeslagen');
   }
   function openRecipeDetail(id) {
     const r = state.recipes.find(x=>x.id===id); if (!r) return;
     const ingredients = (r.ingredients||[]).filter(i=>i.name);
-    $('recipeDetail').innerHTML = `<div class="detail-cover"><span>${recipeIcon(r.category)}</span><button type="button" class="icon-button" id="closeDetail" aria-label="Sluiten">×</button></div><div class="detail-content"><p class="eyebrow">${esc(r.category||'Overig').toLocaleUpperCase('nl')}</p><h2>${esc(r.name)}</h2><p class="muted">${esc(r.description||'Geen omschrijving toegevoegd.')}</p><div class="recipe-meta"><span>◷ ${totalMinutes(r)} min.</span><span>♧ ${r.servings} porties</span><span>${ingredients.length} ingrediënten</span></div><div class="detail-top-actions"><button type="button" class="primary-button" id="detailAddShopping">＋ Boodschappen</button><button type="button" class="secondary-button" id="detailEdit">Bewerken</button></div><div class="detail-section"><h3>Ingrediënten</h3>${ingredients.length?ingredients.map(i=>`<div class="detail-ingredient"><span>${esc(i.name)}</span><span>${esc([i.qty,i.unit].filter(Boolean).join(' '))}</span></div>`).join(''):'<p class="muted">Nog geen ingrediënten ingevuld. Bewerk het recept om ze toe te voegen.</p>'}</div><div class="detail-section"><h3>Bereiding</h3>${r.steps?.length?r.steps.map((s,i)=>`<div class="detail-step"><span class="detail-step-num">${i+1}</span><p>${esc(s.text)}</p></div>`).join(''):'<p class="muted">Nog geen bereidingsstappen toegevoegd.</p>'}</div>${r.notes?`<div class="detail-section"><h3>Eigen notities</h3><p class="muted">${esc(r.notes)}</p></div>`:''}<div class="button-row" style="margin-top:24px"><button type="button" class="secondary-button" id="detailPlan">Plan in weekmenu</button><button type="button" class="danger-button" id="detailDelete">Verwijderen</button></div></div>`;
+    $('recipeDetail').innerHTML = `<div class="detail-cover"><img class="detail-cover-photo" src="${recipePhoto(r)}" alt="${esc(r.name)}" onerror="this.style.display='none'"><div class="detail-cover-shade"></div><button type="button" class="icon-button" id="closeDetail" aria-label="Sluiten">×</button></div><div class="detail-content"><p class="eyebrow">${esc(r.category||'Overig').toLocaleUpperCase('nl')}</p><h2>${esc(r.name)}</h2><p class="muted">${esc(r.description||'Geen omschrijving toegevoegd.')}</p><div class="recipe-meta"><span>◷ ${totalMinutes(r)} min.</span><span>♧ ${r.servings} porties</span><span>${ingredients.length} ingrediënten</span></div><div class="detail-top-actions"><button type="button" class="primary-button" id="detailAddShopping">＋ Boodschappen</button><button type="button" class="secondary-button" id="detailEdit">Bewerken</button></div><div class="detail-section"><h3>Ingrediënten</h3>${ingredients.length?ingredients.map(i=>`<div class="detail-ingredient"><span>${esc(i.name)}</span><span>${esc([i.qty,i.unit].filter(Boolean).join(' '))}</span></div>`).join(''):'<p class="muted">Nog geen ingrediënten ingevuld. Bewerk het recept om ze toe te voegen.</p>'}</div><div class="detail-section"><h3>Bereiding</h3>${r.steps?.length?r.steps.map((s,i)=>`<div class="detail-step"><span class="detail-step-num">${i+1}</span><p>${esc(s.text)}</p></div>`).join(''):'<p class="muted">Nog geen bereidingsstappen toegevoegd.</p>'}</div>${r.notes?`<div class="detail-section"><h3>Eigen notities</h3><p class="muted">${esc(r.notes)}</p></div>`:''}<div class="button-row" style="margin-top:24px"><button type="button" class="secondary-button" id="detailPlan">Plan in weekmenu</button><button type="button" class="danger-button" id="detailDelete">Verwijderen</button></div></div>`;
     $('detailDialog').showModal();
     $('closeDetail').onclick=()=> $('detailDialog').close();
     $('detailEdit').onclick=()=>{ $('detailDialog').close(); openRecipeEditor(r); };
@@ -172,7 +223,7 @@
   function renderWeek() {
     $('weekDays').innerHTML = days.map(d=>{
       const meal = state.week[d.key]; const recipe = meal && state.recipes.find(r=>r.id===meal.recipeId);
-      return `<div class="week-day"><div class="day-label"><strong>${d.label}</strong><small>${d.short}</small></div><div class="week-meal">${recipe?`<strong>${esc(recipe.name)}</strong><small>${meal.servings} personen · ${totalMinutes(recipe)} min.</small>`:`<strong class="muted">Nog niets gepland</strong><small>Voeg een gerecht toe</small>`}</div><button class="day-add" data-week-day="${d.key}" aria-label="${recipe?'Wijzig':'Voeg toe'} op ${d.label}">${recipe?'⋯':'＋'}</button></div>`;
+      return `<div class="week-day ${recipe?'has-recipe':'is-empty'}"><div class="day-label"><strong>${d.short}</strong></div><div class="week-meal">${recipe?`<img class="week-recipe-thumb" src="${recipePhoto(recipe)}" alt="" loading="lazy" onerror="this.style.display='none'"><div class="week-meal-copy"><strong>${esc(recipe.name)}</strong><small>${esc(recipe.category||'Gerecht')} · ${meal.servings} personen · ${totalMinutes(recipe)} min.</small></div>`:`<div class="week-empty-art" aria-hidden="true">＋</div><div class="week-meal-copy"><strong class="muted">Nog niets gepland</strong><small>Voeg een gerecht toe</small></div>`}</div><button class="day-add" data-week-day="${d.key}" aria-label="${recipe?'Wijzig':'Voeg toe'} op ${d.label}">${recipe?'⋯':'＋'}</button></div>`;
     }).join('');
   }
   function openWeekPicker(dayKey, recipeId='') {
@@ -371,6 +422,8 @@
     $('themeToggle').addEventListener('click',()=>applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
     $('addRecipeTop').addEventListener('click',()=>openRecipeEditor());$('addRecipeEmpty').addEventListener('click',()=>openRecipeEditor());
     $('closeRecipe').addEventListener('click',()=> $('recipeDialog').close());$('cancelRecipe').addEventListener('click',()=> $('recipeDialog').close());$('recipeForm').addEventListener('submit',saveRecipe);
+    $('recipePhotoInput').addEventListener('change', async e=>{const file=e.target.files?.[0];if(!file)return;try{$('recipePhotoPreview').src=await imageFileToDataUrl(file);$('recipePhotoPreview').classList.remove('hidden');$('removeRecipePhoto').classList.remove('hidden');$('removeRecipePhoto').dataset.remove='false';}catch(error){showToast(error.message||'Foto kon niet worden geopend.');}});
+    $('removeRecipePhoto').addEventListener('click',()=>{$('recipePhotoInput').value='';$('removeRecipePhoto').dataset.remove='true';$('recipePhotoPreview').src=recipePhoto({name:$('recipeName').value,category:$('recipeCategory').value});$('removeRecipePhoto').classList.add('hidden');showToast('Eigen foto wordt verwijderd bij opslaan.');});
     $('addIngredient').addEventListener('click',()=>addIngredientRow());$('addStep').addEventListener('click',()=>{addStepRow();renumberSteps();});
     $('recipeSearch').addEventListener('input',renderRecipes);
     $('categoryFilters').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;activeCategory=b.dataset.category;renderRecipes();});
@@ -405,7 +458,7 @@
         reloadingForUpdate = true;
         window.location.reload();
       });
-      navigator.serviceWorker.register('./sw.js?v=1.5.5', { updateViaCache: 'none' })
+      navigator.serviceWorker.register('./sw.js?v=1.7.7', { updateViaCache: 'none' })
         .then(registration => registration.update())
         .catch(err => console.warn('Service worker niet geregistreerd', err));
       document.addEventListener('visibilitychange', () => {
