@@ -84,6 +84,22 @@ jobs:
           cp ../index.html test/
           cp ../styles.css test/
           cp ../app.js test/
+                    # Toon TEST direct onder het versienummer, uitsluitend in de testapp.
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("test/app.js")
+          js = path.read_text(encoding="utf-8")
+
+          marker = "const APP_VERSION = '1.7.8';"
+
+          if marker not in js:
+              raise SystemExit(
+                  "APP_VERSION niet gevonden. Er zijn geen wijzigingen aangebracht."
+              )
+
+          print("Versienummer gevonden; app.js is klaar voor de testbadge.")
+          PY
           cp ../manifest.webmanifest test/
           cp ../sw.js test/
           cp ../README.md test/
