@@ -1,4 +1,4 @@
-# Mijn Recepten — v1.7.9
+# Mijn Recepten — v1.8.0
 
 ## Wijzigingen in deze versie
 - JavaScript en CSS worden met een expliciet versienummer geladen om verouderde browsercache te omzeilen.
