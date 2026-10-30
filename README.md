@@ -1,12 +1,12 @@
-# Mijn Recepten — v2.0.0 (productie)
+# Mijn Recepten — v2.0.1 (productie)
 
-## Wijzigingen in v2.0.0
+## Wijzigingen in v2.0.1
 - Recepten kunnen rechtstreeks via het klembord worden overgedragen aan CalorieTracker.
 - De knop ‘Naar CalorieTracker’ kopieert het recept; in CalorieTracker kies je ‘Recept ontvangen’.
 - Fotogegevens worden niet meegestuurd; recept, ingrediënten, hoeveelheden en porties wel.
 - JSON-download blijft beschikbaar als terugval wanneer iOS klembordschrijven blokkeert.
 - Productiedatabase blijft `mijn-recepten-db`.
-- Productiecache is vernieuwd naar `mijn-recepten-v2.0.0`.
+- Productiecache is vernieuwd naar `mijn-recepten-v2.0.1`.
 
 # Mijn Recepten — v1.9.7 (productie)
 

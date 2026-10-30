@@ -509,3 +509,8 @@ html[data-theme="dark"] .detail-cover { background: #29372b; }
 
 /* v1.9.4 — consistent spacing around the child-friendly option */
 .recipe-dialog .kids-toggle, #recipeForm .kids-toggle { margin-bottom: 24px; }
+
+.transfer-success,.transfer-error{margin-top:10px;padding:11px 12px;border-radius:12px;font-size:12px;line-height:1.45}
+.transfer-success{background:#e8eee5;color:#2f5b3b;font-weight:650}
+.transfer-error{background:#fff0ee;color:#963d34;font-weight:650}
+.detail-top-actions .transfer-copied{background:#e8eee5;color:#2f5b3b;border-color:#cbd9c8}

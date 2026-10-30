@@ -297,7 +297,24 @@
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Klembord niet beschikbaar');
       await navigator.clipboard.writeText(json);
-      showToast('Recept gekopieerd. Open CalorieTracker en tik op ‘Recept ontvangen’.');
+      const status = $('calorieTrackerTransferStatus');
+      if (status) {
+        status.textContent = '✓ Recept gekopieerd. Open CalorieTracker en tik op ‘Recept ontvangen’.';
+        status.classList.add('transfer-success');
+        status.classList.remove('transfer-error');
+        status.setAttribute('role', 'status');
+      }
+      const button = $('detailSendCalorieTracker');
+      if (button) {
+        button.textContent = '✓ Gekopieerd';
+        button.classList.add('transfer-copied');
+        setTimeout(() => {
+          if (button.isConnected) {
+            button.textContent = 'Naar CalorieTracker';
+            button.classList.remove('transfer-copied');
+          }
+        }, 3500);
+      }
     } catch (error) {
       // Fallback voor browsers/iOS-configuraties die klembordschrijven blokkeren.
       const safeName = String(recipe.name || 'recept')
@@ -312,13 +329,20 @@
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1500);
-      showToast('Kopiëren is niet toegestaan. Het receptbestand is als alternatief klaargezet.');
+      const status = $('calorieTrackerTransferStatus');
+      if (status) {
+        status.textContent = 'Kopiëren is niet gelukt. Het receptbestand is als alternatief klaargezet; importeer dit in CalorieTracker.';
+        status.classList.add('transfer-error');
+        status.classList.remove('transfer-success');
+        status.setAttribute('role', 'alert');
+      }
+      showToast('Kopiëren niet gelukt; receptbestand klaargezet.');
     }
   }
   function openRecipeDetail(id) {
     const r = state.recipes.find(x=>x.id===id); if (!r) return;
     const ingredients = (r.ingredients||[]).filter(i=>i.name);
-    $('recipeDetail').innerHTML = `<div class="detail-cover"><img class="detail-cover-photo" src="${recipePhoto(r)}" alt="${esc(r.name)}" onerror="this.style.display='none'"><div class="detail-cover-shade"></div><button type="button" class="icon-button" id="closeDetail" aria-label="Sluiten">×</button></div><div class="detail-content"><p class="eyebrow">${esc(r.mealMoment || ((r.tags||[]).includes('Mealprep')?'MEALPREP':'RECEPT')).toLocaleUpperCase('nl')}</p><div class="recipe-badges">${r.isKids?'<span class="recipe-badge kids">Kindvriendelijk</span>':''}${r.cuisine?`<span class="recipe-badge">${esc(r.cuisine)}</span>`:''}${(r.tags||[]).map(tag=>`<span class="recipe-badge">${esc(tag)}</span>`).join('')}</div><h2>${esc(r.name)}</h2><p class="muted">${esc(r.description||'Geen omschrijving toegevoegd.')}</p><div class="recipe-meta"><span>◷ ${totalMinutes(r)} min.</span><span>♧ ${r.servings} porties</span><span>${ingredients.length} ingrediënten</span></div><div class="detail-top-actions"><button type="button" class="primary-button" id="detailAddShopping">＋ Boodschappen</button><button type="button" class="secondary-button" id="detailEdit">Bewerken</button><button type="button" class="secondary-button" id="detailSendCalorieTracker">Naar CalorieTracker</button></div><p class="helper-text">Kopieer het recept en ontvang het daarna in CalorieTracker.</p><div class="detail-section"><h3>Ingrediënten</h3>${ingredients.length?ingredients.map(i=>`<div class="detail-ingredient"><span>${esc(i.name)}</span><span>${esc([i.qty,i.unit].filter(Boolean).join(' '))}</span></div>`).join(''):'<p class="muted">Nog geen ingrediënten ingevuld. Bewerk het recept om ze toe te voegen.</p>'}</div><div class="detail-section"><h3>Bereiding</h3>${r.steps?.length?r.steps.map((s,i)=>`<div class="detail-step"><span class="detail-step-num">${i+1}</span><p>${esc(s.text)}</p></div>`).join(''):'<p class="muted">Nog geen bereidingsstappen toegevoegd.</p>'}</div>${r.notes?`<div class="detail-section"><h3>Eigen notities</h3><p class="muted">${esc(r.notes)}</p></div>`:''}<div class="button-row" style="margin-top:24px"><button type="button" class="secondary-button" id="detailPlan">Plan in weekmenu</button><button type="button" class="danger-button" id="detailDelete">Verwijderen</button></div></div>`;
+    $('recipeDetail').innerHTML = `<div class="detail-cover"><img class="detail-cover-photo" src="${recipePhoto(r)}" alt="${esc(r.name)}" onerror="this.style.display='none'"><div class="detail-cover-shade"></div><button type="button" class="icon-button" id="closeDetail" aria-label="Sluiten">×</button></div><div class="detail-content"><p class="eyebrow">${esc(r.mealMoment || ((r.tags||[]).includes('Mealprep')?'MEALPREP':'RECEPT')).toLocaleUpperCase('nl')}</p><div class="recipe-badges">${r.isKids?'<span class="recipe-badge kids">Kindvriendelijk</span>':''}${r.cuisine?`<span class="recipe-badge">${esc(r.cuisine)}</span>`:''}${(r.tags||[]).map(tag=>`<span class="recipe-badge">${esc(tag)}</span>`).join('')}</div><h2>${esc(r.name)}</h2><p class="muted">${esc(r.description||'Geen omschrijving toegevoegd.')}</p><div class="recipe-meta"><span>◷ ${totalMinutes(r)} min.</span><span>♧ ${r.servings} porties</span><span>${ingredients.length} ingrediënten</span></div><div class="detail-top-actions"><button type="button" class="primary-button" id="detailAddShopping">＋ Boodschappen</button><button type="button" class="secondary-button" id="detailEdit">Bewerken</button><button type="button" class="secondary-button" id="detailSendCalorieTracker">Naar CalorieTracker</button></div><p class="helper-text" id="calorieTrackerTransferStatus" aria-live="polite">Druk op ‘Naar CalorieTracker’ om het recept te kopiëren. Je krijgt hier een bevestiging.</p><div class="detail-section"><h3>Ingrediënten</h3>${ingredients.length?ingredients.map(i=>`<div class="detail-ingredient"><span>${esc(i.name)}</span><span>${esc([i.qty,i.unit].filter(Boolean).join(' '))}</span></div>`).join(''):'<p class="muted">Nog geen ingrediënten ingevuld. Bewerk het recept om ze toe te voegen.</p>'}</div><div class="detail-section"><h3>Bereiding</h3>${r.steps?.length?r.steps.map((s,i)=>`<div class="detail-step"><span class="detail-step-num">${i+1}</span><p>${esc(s.text)}</p></div>`).join(''):'<p class="muted">Nog geen bereidingsstappen toegevoegd.</p>'}</div>${r.notes?`<div class="detail-section"><h3>Eigen notities</h3><p class="muted">${esc(r.notes)}</p></div>`:''}<div class="button-row" style="margin-top:24px"><button type="button" class="secondary-button" id="detailPlan">Plan in weekmenu</button><button type="button" class="danger-button" id="detailDelete">Verwijderen</button></div></div>`;
     $('detailDialog').showModal();
     recipeDetailActive = true;
     requestRecipeWakeLock();
