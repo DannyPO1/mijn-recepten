@@ -477,6 +477,14 @@ html[data-theme="dark"] .detail-cover { background: #29372b; }
 .photo-pick-button input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
 .photo-remove-button{grid-column:1;justify-self:start;padding:3px 0}
 
+/* v1.9.0 recipe metadata */
+.kids-toggle{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:var(--surface);font-size:13px;font-weight:650}
+.kids-toggle input{width:18px;height:18px;accent-color:var(--green)}
+.photo-library-label{margin-top:8px}
+.recipe-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.recipe-badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:99px;background:var(--green-pale);color:var(--green);font-size:9px;font-weight:750}
+.recipe-badge.kids{background:#f7eadc;color:#87552c}
+
 
 /* Testversie: versie en label verticaal uitlijnen */
 .test-version-stack {

@@ -1,25 +1,16 @@
-# Mijn Recepten — v1.8.0
+# Mijn Recepten — v1.9.0 (test)
 
-## Wijzigingen in deze versie
-- JavaScript en CSS worden met een expliciet versienummer geladen om verouderde browsercache te omzeilen.
-- De service-worker-URL en cache zijn bijgewerkt naar v1.7.8, zodat Safari een nieuwe worker kan detecteren.
-- De versieweergave is overal gelijkgetrokken naar v1.7.8.
-- De bestaande IndexedDB-opslag met recepten, weekmenu en boodschappenlijst wordt niet aangepast.
+## Nieuwe functies
+- Recepten hebben nu afzonderlijke velden voor maaltijdmoment, keuken en tags.
+- Recepten kunnen als kindvriendelijk worden gemarkeerd; dit is zichtbaar op receptkaarten.
+- Foto's kunnen uit de bestaande fotobibliotheek of uit Foto's op de iPhone worden gekozen.
+- Persoonlijke foto's (`photoDataUrl`) en bibliotheekfoto's (`photoPath`) blijven behouden bij bewerken, back-up en import.
+- JSON-back-ups gebruiken schema versie 2. Import blijft compatibel met schema versie 1 en oudere back-ups.
+- Bestaande recepten worden bij het openen aangevuld met de nieuwe velden zonder bestaande ingrediënten, bereidingsstappen, weekmenu's, boodschappen of foto's te verwijderen.
+- Deze testbuild gebruikt een aparte IndexedDB-database (`mijn-recepten-test-db`) en eigen service-worker-cache (`mijn-recepten-test-v1.9.0`).
 
-## Belangrijk
-Deze update wist of migreert geen lokale recepten. Bewaar je JSON-back-up als extra voorzorg.
+## Back-up
+Maak voor het testen eerst een JSON-back-up van de bestaande gegevens. Bewaar deze in iCloud Drive. De importfunctie kan oudere versie-1-back-ups lezen.
 
-
-Extra correctie: iconbestanden blijven in het ZIP-pakket aanwezig; de GitHub Actions-workflow moet de map `icons/` ook naar de publicatiemap kopiëren.
-
-
-Versie 1.7.8: visuele homepage-tegels met grote foto’s, iconen op receptkaarten en categoriefilters verwijderd, en een fotobanner toegevoegd aan Boodschappen. Gegevensstructuur en functies zijn behouden.
-
-
-Versie 1.7.8: je kunt nu per recept een eigen foto kiezen. De foto wordt verkleind opgeslagen als onderdeel van het recept in de lokale IndexedDB-opslag en gaat mee in de JSON-back-up. Zonder eigen foto blijft de automatische foto op basis van gerechtnaam/categorie actief.
-
-## Fotobibliotheek
-- Standaardgerechtfoto's staan in `images/recipes/` als WebP-bestanden.
-- De foto's zijn geoptimaliseerd voor de mobiele app en worden lokaal vanaf dezelfde GitHub Pages-site geladen.
-- Voor de eigen fotobibliotheek geldt: zorg dat de workflow de map `images/` meeneemt bij het uitpakken en publiceren.
-- Persoonlijke foto's die je in de app kiest, blijven onderdeel van het recept in de lokale opslag en JSON-back-up.
+## Publiceren
+Upload de inhoud van deze ZIP naar de testbranch. De testworkflow moet de bestanden `index.html`, `styles.css`, `app.js`, `manifest.webmanifest`, `sw.js`, `icons/` en `images/` publiceren.

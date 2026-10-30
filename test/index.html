@@ -11,14 +11,14 @@
   <meta name="description" content="Jouw persoonlijke receptenboek, weekmenu en boodschappenlijst.">
   <title>Mijn Recepten</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=1.8.0">
+  <link rel="stylesheet" href="styles.css?v=1.9.0">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <img class="brand-mark" src="icons/icon-192.png" alt="" aria-hidden="true">
       <div class="brand-copy"><p class="eyebrow">JOUW PERSOONLIJKE KOOKBOEK</p><h1>Mijn Recepten</h1></div>
-      <span class="test-version-stack"><span class="app-version" data-app-version aria-label="Appversie 1.8.0">v1.8.0</span><span class="test-label">TEST</span></span>
+      <span class="test-version-stack"><span class="app-version" data-app-version aria-label="Appversie 1.9.0">v1.9.0</span><span class="test-label">TEST</span></span>
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Donkere modus inschakelen" title="Donkere modus inschakelen"><span id="themeToggleIcon" aria-hidden="true">☾</span></button>
     </header>
 
@@ -98,12 +98,22 @@
       <input type="hidden" id="recipeId">
       <label class="field-label">Naam van het gerecht<input id="recipeName" required maxlength="120" placeholder="Bijv. Kip met rijst"></label>
       <div class="two-columns"><label class="field-label">Categorie<select id="recipeCategory"><option>Avondeten</option><option>Ontbijt</option><option>Lunch</option><option>Mealprep</option><option>Snack</option><option>Kinderen</option><option>Bijgerecht</option><option>Mexicaans</option><option>Rijst &amp; Bowls</option><option>Wraps &amp; Flatbreads</option><option>Pasta</option><option>Salades</option><option>Kip</option><option>Overig</option></select></label><label class="field-label">Porties<input id="recipeServings" type="number" min="1" max="100" value="2" required></label></div>
+      <div class="two-columns">
+        <label class="field-label">Maaltijdmoment<select id="recipeMealMoment"><option value="">Niet opgegeven</option><option>Ontbijt</option><option>Lunch</option><option>Avondeten</option><option>Snack</option><option>Bijgerecht</option></select></label>
+        <label class="field-label">Keuken<select id="recipeCuisine"><option value="">Niet opgegeven</option><option>Nederlands</option><option>Mediterraan</option><option>Mexicaans</option><option>Italiaans</option><option>Marokkaans</option><option>Turks</option><option>Arabisch</option><option>Indiaas</option><option>Aziatisch</option><option>Anders</option></select></label>
+      </div>
+      <label class="field-label">Tags <input id="recipeTags" placeholder="Bijv. vegetarisch, eiwitrijk, snel (komma-gescheiden)"></label>
+      <label class="kids-toggle"><input id="recipeKids" type="checkbox"><span>Kindvriendelijk recept</span></label>
+
       <div class="two-columns"><label class="field-label">Voorbereiding (min.)<input id="recipePrep" type="number" min="0" max="999" value="10"></label><label class="field-label">Bereiding (min.)<input id="recipeCook" type="number" min="0" max="999" value="20"></label></div>
       <label class="field-label">Korte omschrijving<textarea id="recipeDescription" rows="2" placeholder="Wat maakt dit gerecht lekker?"></textarea></label>
       <div class="recipe-photo-editor">
         <div><strong>Foto van het gerecht</strong><p class="muted">Kies een foto uit Foto’s. De afbeelding wordt verkleind en bij dit recept op je iPhone bewaard.</p></div>
         <img id="recipePhotoPreview" class="recipe-photo-preview" alt="Voorbeeld van de gerechtfoto">
-        <label class="secondary-button photo-pick-button">Kies foto<input id="recipePhotoInput" type="file" accept="image/*"></label>
+        <label class="secondary-button photo-pick-button">Kies iPhone-foto<input id="recipePhotoInput" type="file" accept="image/*"></label>
+        <label class="field-label photo-library-label">Of kies uit de fotobibliotheek<select id="recipePhotoLibrary"><option value="">Automatische gerechtfoto</option>
+          <option value="havermout-bananenpannenkoeken">Havermout-bananenpannenkoeken</option><option value="mexicaanse-vulling">Mexicaanse vulling</option><option value="kip-met-rijst">Kip met rijst</option><option value="kip-wraps">Kip-wraps</option><option value="pasta-bolognese">Pasta bolognese</option><option value="pasta-carbonara">Pasta carbonara</option><option value="noedels-kip">Noedels met kip</option><option value="kip-curry">Kip curry</option><option value="groentesoep">Groentesoep</option><option value="linzencurry">Linzencurry</option><option value="shakshuka">Shakshuka</option><option value="zalm-met-rijst">Zalm met rijst</option><option value="tonijnsalade">Tonijnsalade</option><option value="quinoa-bowl">Quinoa bowl</option><option value="aardappelen-groente-kip">Aardappelen, groente en kip</option><option value="smoothie-bowl">Smoothie bowl</option><option value="omelet-groente">Omelet met groente</option><option value="hamburgers">Hamburgers</option><option value="falafel-wraps">Falafel-wraps</option><option value="linzensoep">Linzensoep</option><option value="kwark-met-fruit">Kwark met fruit</option>
+        </select></label>
         <button type="button" class="text-button photo-remove-button" id="removeRecipePhoto">Eigen foto verwijderen</button>
       </div>
       <div class="subform-heading"><div><h3>Ingrediënten</h3><p class="muted">Hoeveelheid en eenheid zijn optioneel.</p></div><button type="button" class="small-button" id="addIngredient">＋ Ingrediënt</button></div>
@@ -118,6 +128,6 @@
   <dialog id="detailDialog" class="modal detail-modal"><div id="recipeDetail"></div></dialog>
   <dialog id="weekPickerDialog" class="modal"><form method="dialog" id="weekPickerForm"><div class="modal-header"><div><p class="eyebrow">WEEKMENU</p><h2>Maaltijd plannen</h2></div><button type="button" class="icon-button" id="closeWeekPicker">×</button></div><input type="hidden" id="weekDayKey"><label class="field-label">Kies een recept<select id="weekRecipeSelect"></select></label><label class="field-label">Aantal personen<input id="weekServings" type="number" min="1" max="100" value="2"></label><div class="button-row modal-actions"><button type="button" class="secondary-button" id="removeWeekMeal">Verwijderen</button><button type="submit" class="primary-button">Opslaan</button></div></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=1.8.0"></script>
+  <script src="app.js?v=1.9.0"></script>
 </body>
 </html>
