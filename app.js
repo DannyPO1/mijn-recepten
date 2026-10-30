@@ -1,10 +1,14 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.8.0';
-  const DB_NAME = 'mijn-recepten-db';
+  const APP_VERSION = '1.9.2';
+  const DB_NAME = 'mijn-recepten-test-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
   const STATE_KEY = 'main';
+  const MEAL_MOMENTS = ['Ontbijt','Lunch','Avondeten','Snack','Dessert','Bijgerecht'];
+  const CUISINES = ['Nederlands','Italiaans','Mexicaans','Marokkaans','Aziatisch','Indonesisch','Indiaas','Midden-Oosters','Internationaal'];
+  const LEGACY_CATEGORY_TAGS = {'Rijst & Bowls':'Rijst & Bowls','Wraps & Flatbreads':'Wraps & Flatbreads','Pasta':'Pasta','Salades':'Salades','Kip':'Kip'};
+  const LEGACY_CATEGORY_CUISINES = {'Mexicaans':'Mexicaans'};
   const $ = (id) => document.getElementById(id);
   const uid = () => (crypto && crypto.randomUUID) ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2);
   const days = [
@@ -21,7 +25,7 @@
 
   let db = null;
   let state = null;
-  let activeCategory = 'Alles';
+  let activeMealMoment = 'Alles';
   let pendingImport = null;
   let pendingRecipeImport = null;
   let toastTimer = null;
@@ -43,6 +47,25 @@
       const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(STATE_KEY);
       req.onsuccess = () => resolve(req.result ? req.result.value : null);
       req.onerror = () => reject(req.error);
+    });
+  }
+  function readLegacyState() {
+    return new Promise(resolve => {
+      let created = false;
+      const request = indexedDB.open('mijn-recepten-db');
+      request.onupgradeneeded = () => { created = true; request.transaction.abort(); };
+      request.onsuccess = () => {
+        const legacyDb = request.result;
+        if (created || !legacyDb.objectStoreNames.contains('appState')) { legacyDb.close(); resolve(null); return; }
+        try {
+          const tx = legacyDb.transaction('appState', 'readonly');
+          const get = tx.objectStore('appState').get('main');
+          get.onsuccess = () => { const value = get.result?.value || null; legacyDb.close(); resolve(value); };
+          get.onerror = () => { legacyDb.close(); resolve(null); };
+        } catch (_) { legacyDb.close(); resolve(null); }
+      };
+      request.onerror = () => resolve(null);
+      request.onblocked = () => resolve(null);
     });
   }
   function writeState() {
@@ -96,11 +119,29 @@
     if (name === 'home') renderHome();
     window.scrollTo({top:0,behavior:'smooth'});
   }
-  function recipeIcon(category) { return ({'Ontbijt':'🥞','Lunch':'🥪','Avondeten':'🍽️','Mealprep':'🥡','Snack':'🍎','Overig':'✨','Kinderen':'🧒','Bijgerecht':'🥕','Mexicaans':'🌮','Rijst & Bowls':'🍚','Wraps & Flatbreads':'🌯','Pasta':'🍝','Salades':'🥗','Kip':'🍗'})[category] || '🍴'; }
-  function categoryLabel(category) { return `${recipeIcon(category)} ${category || 'Overig'}`; }
+  function recipeIcon(mealMoment) { return ({'Ontbijt':'🥞','Lunch':'🥪','Avondeten':'🍽️','Snack':'🍎','Dessert':'🍰','Bijgerecht':'🥕'})[mealMoment] || '🍴'; }
+  function categoryLabel(mealMoment) { return `${recipeIcon(mealMoment)} ${mealMoment || 'Zonder maaltijdmoment'}`; }
+  function normalizeRecipeMetadata(raw) {
+    const tags = Array.isArray(raw.tags) ? raw.tags.map(String).map(t=>t.trim()).filter(Boolean) : [];
+    const legacyCategory = String(raw.category || '').trim();
+    let mealMoment = String(raw.mealMoment || '').trim();
+    if (!MEAL_MOMENTS.includes(mealMoment) && MEAL_MOMENTS.includes(legacyCategory)) mealMoment = legacyCategory;
+    if (!MEAL_MOMENTS.includes(mealMoment)) mealMoment = '';
+    let cuisine = String(raw.cuisine || '').trim();
+    if (!CUISINES.includes(cuisine) && LEGACY_CATEGORY_CUISINES[legacyCategory]) cuisine = LEGACY_CATEGORY_CUISINES[legacyCategory];
+    if (!CUISINES.includes(cuisine)) cuisine = '';
+    if (legacyCategory === 'Mealprep') tags.push('Mealprep');
+    if (LEGACY_CATEGORY_TAGS[legacyCategory]) tags.push(LEGACY_CATEGORY_TAGS[legacyCategory]);
+    let isKids = Boolean(raw.isKids) || tags.includes('Kindergerecht') || legacyCategory === 'Kinderen';
+    if (legacyCategory === 'Kinderen' && !mealMoment) mealMoment = 'Avondeten';
+    // Kindvriendelijkheid is a dedicated checkbox/label, never a duplicate custom tag.
+    const cleanTags = [...new Set(tags)].filter(tag => tag !== 'Kindergerecht');
+    return {...raw, category:mealMoment, mealMoment, cuisine, tags:cleanTags, isKids};
+  }
   function totalMinutes(recipe) { return (Number(recipe.prep)||0) + (Number(recipe.cook)||0); }
   function recipePhoto(recipe) {
     if (recipe?.photoDataUrl) return recipe.photoDataUrl;
+    if (recipe?.photoPath) return `images/recipes/${recipe.photoPath}.webp`;
     const name = (recipe?.name || '').toLocaleLowerCase('nl');
     const category = (recipe?.category || '').toLocaleLowerCase('nl');
     const asset = (file) => `images/recipes/${file}.webp`;
@@ -130,7 +171,7 @@
   function renderCard(recipe) {
     const ingredientCount = (recipe.ingredients || []).filter(i => i.name && i.name.trim()).length;
     const photo = recipePhoto(recipe);
-    return `<article class="recipe-card" data-open-recipe="${esc(recipe.id)}" tabindex="0" role="button" aria-label="Open ${esc(recipe.name)}"><div class="recipe-art"><img class="recipe-photo" src="${photo}" alt="" loading="lazy" onerror="this.style.display='none'"><span class="category-pill">${esc(recipe.category || 'Overig')}</span></div><div class="recipe-card-body"><h3>${esc(recipe.name)}</h3><p class="recipe-description">${esc(recipe.description || (ingredientCount ? ingredientCount + ' ingrediënten' : 'Recept nog aanvullen'))}</p><div class="recipe-meta"><span>◷ ${totalMinutes(recipe)} min.</span><span>♧ ${Number(recipe.servings)||1} porties</span></div></div></article>`;
+    return `<article class="recipe-card" data-open-recipe="${esc(recipe.id)}" tabindex="0" role="button" aria-label="Open ${esc(recipe.name)}"><div class="recipe-art"><img class="recipe-photo" src="${photo}" alt="" loading="lazy" onerror="this.style.display='none'"><span class="category-pill">${esc(recipe.mealMoment || ((recipe.tags||[]).includes('Mealprep') ? 'Mealprep' : 'Recept'))}</span></div><div class="recipe-card-body"><h3>${esc(recipe.name)}</h3><p class="recipe-description">${esc(recipe.description || (ingredientCount ? ingredientCount + ' ingrediënten' : 'Recept nog aanvullen'))}</p><div class="recipe-meta"><span>◷ ${totalMinutes(recipe)} min.</span><span>♧ ${Number(recipe.servings)||1} porties</span></div><div class="recipe-badges">${recipe.isKids ? '<span class="recipe-badge kids">Kindvriendelijk</span>' : ''}${recipe.cuisine ? `<span class="recipe-badge">${esc(recipe.cuisine)}</span>` : ''}${(recipe.tags||[]).slice(0,3).map(tag=>`<span class="recipe-badge">${esc(tag)}</span>`).join('')}</div></div></article>`;
   }
   function renderHome() {
     $('recipeCount').textContent = `${state.recipes.length} ${state.recipes.length === 1 ? 'recept' : 'recepten'}`;
@@ -139,13 +180,17 @@
     $('recentRecipes').innerHTML = recent.length ? recent.map(renderCard).join('') : `<div class="empty-small">Je recepten verschijnen hier zodra je ze toevoegt.</div>`;
   }
   function renderFilters() {
-    const categories = ['Alles',...new Set(state.recipes.map(r=>r.category || 'Overig'))];
-    $('categoryFilters').innerHTML = categories.map(c=>`<button class="filter-chip ${activeCategory===c?'active':''}" data-category="${esc(c)}">${esc(c)}</button>`).join('');
+    const moments = ['Alles',...MEAL_MOMENTS,'Zonder maaltijdmoment'];
+    $('categoryFilters').innerHTML = moments.map(moment=>`<button class="filter-chip ${activeMealMoment===moment?'active':''}" data-meal-moment="${esc(moment)}">${esc(moment)}</button>`).join('');
   }
   function renderRecipes() {
     renderFilters();
     const q = $('recipeSearch').value.trim().toLocaleLowerCase('nl');
-    const list = state.recipes.filter(r => (activeCategory === 'Alles' || (r.category||'Overig') === activeCategory) && (!q || [r.name,r.description,r.category,...(r.ingredients||[]).map(i=>i.name)].join(' ').toLocaleLowerCase('nl').includes(q)));
+    const list = state.recipes.filter(r => {
+      const momentMatch = activeMealMoment === 'Alles' || (activeMealMoment === 'Zonder maaltijdmoment' ? !r.mealMoment : r.mealMoment === activeMealMoment);
+      const searchable = [r.name,r.description,r.mealMoment,r.cuisine,...(r.tags||[]),...(r.ingredients||[]).map(i=>i.name)].join(' ').toLocaleLowerCase('nl');
+      return momentMatch && (!q || searchable.includes(q));
+    });
     $('allRecipes').innerHTML = list.map(renderCard).join('');
     $('recipesEmpty').classList.toggle('hidden', list.length > 0);
     $('allRecipes').classList.toggle('hidden', list.length === 0);
@@ -154,12 +199,16 @@
     $('recipeForm').reset(); $('recipeId').value = recipe?.id || '';
     $('recipeDialogTitle').textContent = recipe ? 'Recept aanpassen' : 'Nieuw recept';
     $('recipeName').value = recipe?.name || '';
-    $('recipeCategory').value = recipe?.category || 'Avondeten';
+    $('recipeMealMoment').value = recipe ? (recipe.mealMoment || '') : 'Avondeten';
+    $('recipeCuisine').value = recipe?.cuisine || '';
+    $('recipeTags').value = (recipe?.tags || []).join(', ');
+    $('recipeKids').checked = Boolean(recipe?.isKids);
     $('recipeServings').value = recipe?.servings || 2;
     $('recipePrep').value = recipe?.prep ?? 10; $('recipeCook').value = recipe?.cook ?? 20;
     $('recipeDescription').value = recipe?.description || ''; $('recipeNotes').value = recipe?.notes || '';
     $('recipePhotoInput').value = ''; $('removeRecipePhoto').dataset.remove = 'false';
-    $('recipePhotoPreview').src = recipe?.photoDataUrl || recipePhoto(recipe || {name:'',category:'Avondeten'});
+    $('recipePhotoLibrary').value = recipe?.photoPath || '';
+    $('recipePhotoPreview').src = recipe?.photoDataUrl || recipePhoto(recipe || {name:'',mealMoment:'Avondeten'});
     $('recipePhotoPreview').classList.remove('hidden');
     $('removeRecipePhoto').classList.toggle('hidden', !recipe?.photoDataUrl);
     $('ingredientEditor').innerHTML = ''; $('stepEditor').innerHTML = '';
@@ -200,19 +249,22 @@
     const steps = [...$('stepEditor').querySelectorAll('.step-row')].map(row=>({id:uid(),text:row.querySelector('.step-text').value.trim()})).filter(s=>s.text);
     if (! $('recipeName').value.trim()) return;
     let photoDataUrl = old?.photoDataUrl || '';
+    let photoPath = old?.photoPath || '';
     try {
-      if ($('removeRecipePhoto').dataset.remove === 'true') photoDataUrl = '';
+      if ($('removeRecipePhoto').dataset.remove === 'true') { photoDataUrl = ''; photoPath = ''; }
       const file = $('recipePhotoInput').files?.[0];
-      if (file) photoDataUrl = await imageFileToDataUrl(file);
+      if (file) { photoDataUrl = await imageFileToDataUrl(file); photoPath = ''; }
+      else if ($('recipePhotoLibrary').value) { photoDataUrl = ''; photoPath = $('recipePhotoLibrary').value; }
     } catch (error) { showToast(error.message || 'Foto kon niet worden verwerkt.'); return; }
-    const recipe = {id,name:$('recipeName').value.trim(),category:$('recipeCategory').value,servings:Math.max(1,Number($('recipeServings').value)||1),prep:Math.max(0,Number($('recipePrep').value)||0),cook:Math.max(0,Number($('recipeCook').value)||0),description:$('recipeDescription').value.trim(),ingredients,steps,notes:$('recipeNotes').value.trim(),photoDataUrl,createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+    const mealMoment = $('recipeMealMoment').value; const isKids = $('recipeKids').checked; const tags = [...new Set($('recipeTags').value.split(',').map(t=>t.trim()).filter(Boolean).filter(t=>t !== 'Kindergerecht'))];
+    const recipe = {id,name:$('recipeName').value.trim(),category:mealMoment,servings:Math.max(1,Number($('recipeServings').value)||1),prep:Math.max(0,Number($('recipePrep').value)||0),cook:Math.max(0,Number($('recipeCook').value)||0),description:$('recipeDescription').value.trim(),mealMoment:$('recipeMealMoment').value,cuisine:$('recipeCuisine').value,tags,isKids,ingredients,steps,notes:$('recipeNotes').value.trim(),photoDataUrl,photoPath,createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
     if (old) state.recipes = state.recipes.map(r=>r.id===id?recipe:r); else state.recipes.unshift(recipe);
     await persist(); $('recipeDialog').close(); renderAll(); showToast(old?'Recept bijgewerkt':'Recept opgeslagen');
   }
   function openRecipeDetail(id) {
     const r = state.recipes.find(x=>x.id===id); if (!r) return;
     const ingredients = (r.ingredients||[]).filter(i=>i.name);
-    $('recipeDetail').innerHTML = `<div class="detail-cover"><img class="detail-cover-photo" src="${recipePhoto(r)}" alt="${esc(r.name)}" onerror="this.style.display='none'"><div class="detail-cover-shade"></div><button type="button" class="icon-button" id="closeDetail" aria-label="Sluiten">×</button></div><div class="detail-content"><p class="eyebrow">${esc(r.category||'Overig').toLocaleUpperCase('nl')}</p><h2>${esc(r.name)}</h2><p class="muted">${esc(r.description||'Geen omschrijving toegevoegd.')}</p><div class="recipe-meta"><span>◷ ${totalMinutes(r)} min.</span><span>♧ ${r.servings} porties</span><span>${ingredients.length} ingrediënten</span></div><div class="detail-top-actions"><button type="button" class="primary-button" id="detailAddShopping">＋ Boodschappen</button><button type="button" class="secondary-button" id="detailEdit">Bewerken</button></div><div class="detail-section"><h3>Ingrediënten</h3>${ingredients.length?ingredients.map(i=>`<div class="detail-ingredient"><span>${esc(i.name)}</span><span>${esc([i.qty,i.unit].filter(Boolean).join(' '))}</span></div>`).join(''):'<p class="muted">Nog geen ingrediënten ingevuld. Bewerk het recept om ze toe te voegen.</p>'}</div><div class="detail-section"><h3>Bereiding</h3>${r.steps?.length?r.steps.map((s,i)=>`<div class="detail-step"><span class="detail-step-num">${i+1}</span><p>${esc(s.text)}</p></div>`).join(''):'<p class="muted">Nog geen bereidingsstappen toegevoegd.</p>'}</div>${r.notes?`<div class="detail-section"><h3>Eigen notities</h3><p class="muted">${esc(r.notes)}</p></div>`:''}<div class="button-row" style="margin-top:24px"><button type="button" class="secondary-button" id="detailPlan">Plan in weekmenu</button><button type="button" class="danger-button" id="detailDelete">Verwijderen</button></div></div>`;
+    $('recipeDetail').innerHTML = `<div class="detail-cover"><img class="detail-cover-photo" src="${recipePhoto(r)}" alt="${esc(r.name)}" onerror="this.style.display='none'"><div class="detail-cover-shade"></div><button type="button" class="icon-button" id="closeDetail" aria-label="Sluiten">×</button></div><div class="detail-content"><p class="eyebrow">${esc(r.mealMoment || ((r.tags||[]).includes('Mealprep')?'MEALPREP':'RECEPT')).toLocaleUpperCase('nl')}</p><div class="recipe-badges">${r.isKids?'<span class="recipe-badge kids">Kindvriendelijk</span>':''}${r.cuisine?`<span class="recipe-badge">${esc(r.cuisine)}</span>`:''}${(r.tags||[]).map(tag=>`<span class="recipe-badge">${esc(tag)}</span>`).join('')}</div><h2>${esc(r.name)}</h2><p class="muted">${esc(r.description||'Geen omschrijving toegevoegd.')}</p><div class="recipe-meta"><span>◷ ${totalMinutes(r)} min.</span><span>♧ ${r.servings} porties</span><span>${ingredients.length} ingrediënten</span></div><div class="detail-top-actions"><button type="button" class="primary-button" id="detailAddShopping">＋ Boodschappen</button><button type="button" class="secondary-button" id="detailEdit">Bewerken</button></div><div class="detail-section"><h3>Ingrediënten</h3>${ingredients.length?ingredients.map(i=>`<div class="detail-ingredient"><span>${esc(i.name)}</span><span>${esc([i.qty,i.unit].filter(Boolean).join(' '))}</span></div>`).join(''):'<p class="muted">Nog geen ingrediënten ingevuld. Bewerk het recept om ze toe te voegen.</p>'}</div><div class="detail-section"><h3>Bereiding</h3>${r.steps?.length?r.steps.map((s,i)=>`<div class="detail-step"><span class="detail-step-num">${i+1}</span><p>${esc(s.text)}</p></div>`).join(''):'<p class="muted">Nog geen bereidingsstappen toegevoegd.</p>'}</div>${r.notes?`<div class="detail-section"><h3>Eigen notities</h3><p class="muted">${esc(r.notes)}</p></div>`:''}<div class="button-row" style="margin-top:24px"><button type="button" class="secondary-button" id="detailPlan">Plan in weekmenu</button><button type="button" class="danger-button" id="detailDelete">Verwijderen</button></div></div>`;
     $('detailDialog').showModal();
     $('closeDetail').onclick=()=> $('detailDialog').close();
     $('detailEdit').onclick=()=>{ $('detailDialog').close(); openRecipeEditor(r); };
@@ -344,7 +396,7 @@
     const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
   }
   function makeBackup() {
-    const backup={app:'Mijn Recepten',schemaVersion:1,exportedAt:new Date().toISOString(),data:state};
+    const backup={app:'Mijn Recepten',schemaVersion:2,exportedAt:new Date().toISOString(),data:{...state,version:2}};
     const date=new Date().toISOString().slice(0,10);
     downloadBlob(new Blob([JSON.stringify(backup,null,2)],{type:'application/json;charset=utf-8'}),`mijn-recepten-back-up-${date}.json`);
     state.lastExport=backup.exportedAt;persist();showToast('Back-upbestand aangemaakt. Bewaar het in iCloud Drive.');
@@ -353,12 +405,12 @@
     const data=obj?.data||obj;
     if(!data||!Array.isArray(data.recipes))throw new Error('Dit bestand bevat geen herkenbare receptenlijst.');
     if(data.recipes.some(r=>!r||typeof r.name!=='string'))throw new Error('Een of meer recepten zijn ongeldig.');
-    return {version:1,recipes:data.recipes.map(r=>({...r,id:r.id||uid(),ingredients:Array.isArray(r.ingredients)?r.ingredients:[],steps:Array.isArray(r.steps)?r.steps:[],updatedAt:r.updatedAt||new Date().toISOString()})),week:data.week&&typeof data.week==='object'?data.week:{},shopping:Array.isArray(data.shopping)?data.shopping:[],lastExport:data.lastExport||null};
+    return {version:2,recipes:data.recipes.map(r=>({...normalizeRecipeMetadata(r),id:r.id||uid(),ingredients:Array.isArray(r.ingredients)?r.ingredients:[],steps:Array.isArray(r.steps)?r.steps:[],updatedAt:r.updatedAt||new Date().toISOString()})),week:data.week&&typeof data.week==='object'?data.week:{},shopping:Array.isArray(data.shopping)?data.shopping:[],lastExport:data.lastExport||null};
   }
   function mergeState(incoming) {
     const recipes=[...state.recipes];incoming.recipes.forEach(r=>{const index=recipes.findIndex(x=>x.id===r.id||normalizeName(x.name)===normalizeName(r.name));if(index>=0)recipes[index]={...recipes[index],...r,id:recipes[index].id};else recipes.push(r);});
     const shopping=[...state.shopping];incoming.shopping.forEach(i=>{if(!shopping.some(x=>normalizeName(x.name)===normalizeName(i.name)&&unitKey(x.unit)===unitKey(i.unit)))shopping.push({...i,id:i.id||uid()});});
-    state={version:1,recipes,week:{...state.week,...incoming.week},shopping,lastExport:state.lastExport};
+    state={version:2,recipes,week:{...state.week,...incoming.week},shopping,lastExport:state.lastExport};
   }
   async function handleImport(file) {
     if(!file)return;
@@ -375,7 +427,8 @@
     }).filter(i=>i.name) : [];
     const steps = Array.isArray(raw.steps) ? raw.steps.map(step => typeof step === 'string' ? {id:uid(),text:step.trim()} : {id:step?.id||uid(),text:String(step?.text??step?.instruction??'').trim()}).filter(s=>s.text) : [];
     const now=new Date().toISOString();
-    return {id:raw.id||uid(),name:raw.name.trim(),category:['Ontbijt','Lunch','Avondeten','Mealprep','Snack','Overig','Kinderen','Bijgerecht','Mexicaans','Rijst & Bowls','Wraps & Flatbreads','Pasta','Salades','Kip'].includes(raw.category)?raw.category:'Overig',servings:Math.max(1,Number(raw.servings)||2),prep:Math.max(0,Number(raw.prep)||0),cook:Math.max(0,Number(raw.cook)||0),description:String(raw.description||''),ingredients,steps,notes:String(raw.notes||''),createdAt:raw.createdAt||now,updatedAt:now};
+    const metadata = normalizeRecipeMetadata(raw);
+    return {...metadata,id:raw.id||uid(),name:raw.name.trim(),servings:Math.max(1,Number(raw.servings)||2),prep:Math.max(0,Number(raw.prep)||0),cook:Math.max(0,Number(raw.cook)||0),description:String(raw.description||''),photoDataUrl:raw.photoDataUrl||'',photoPath:raw.photoPath||'',ingredients,steps,notes:String(raw.notes||''),createdAt:raw.createdAt||now,updatedAt:now};
   }
   async function handleRecipeImport(file) {
     if(!file)return;
@@ -422,11 +475,12 @@
     $('themeToggle').addEventListener('click',()=>applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
     $('addRecipeTop').addEventListener('click',()=>openRecipeEditor());$('addRecipeEmpty').addEventListener('click',()=>openRecipeEditor());
     $('closeRecipe').addEventListener('click',()=> $('recipeDialog').close());$('cancelRecipe').addEventListener('click',()=> $('recipeDialog').close());$('recipeForm').addEventListener('submit',saveRecipe);
+    $('recipePhotoLibrary').addEventListener('change', e=>{const key=e.target.value;if(!key)return;$('recipePhotoInput').value='';$('recipePhotoPreview').src=`images/recipes/${key}.webp`;$('recipePhotoPreview').classList.remove('hidden');$('removeRecipePhoto').classList.remove('hidden');$('removeRecipePhoto').dataset.remove='false';});
     $('recipePhotoInput').addEventListener('change', async e=>{const file=e.target.files?.[0];if(!file)return;try{$('recipePhotoPreview').src=await imageFileToDataUrl(file);$('recipePhotoPreview').classList.remove('hidden');$('removeRecipePhoto').classList.remove('hidden');$('removeRecipePhoto').dataset.remove='false';}catch(error){showToast(error.message||'Foto kon niet worden geopend.');}});
-    $('removeRecipePhoto').addEventListener('click',()=>{$('recipePhotoInput').value='';$('removeRecipePhoto').dataset.remove='true';$('recipePhotoPreview').src=recipePhoto({name:$('recipeName').value,category:$('recipeCategory').value});$('removeRecipePhoto').classList.add('hidden');showToast('Eigen foto wordt verwijderd bij opslaan.');});
+    $('removeRecipePhoto').addEventListener('click',()=>{$('recipePhotoInput').value='';$('recipePhotoLibrary').value='';$('removeRecipePhoto').dataset.remove='true';$('recipePhotoPreview').src=recipePhoto({name:$('recipeName').value,mealMoment:$('recipeMealMoment').value});$('removeRecipePhoto').classList.add('hidden');showToast('Eigen foto wordt verwijderd bij opslaan.');});
     $('addIngredient').addEventListener('click',()=>addIngredientRow());$('addStep').addEventListener('click',()=>{addStepRow();renumberSteps();});
     $('recipeSearch').addEventListener('input',renderRecipes);
-    $('categoryFilters').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;activeCategory=b.dataset.category;renderRecipes();});
+    $('categoryFilters').addEventListener('click',e=>{const b=e.target.closest('[data-meal-moment]');if(!b)return;activeMealMoment=b.dataset.mealMoment;renderRecipes();});
     document.body.addEventListener('click',e=>{const card=e.target.closest('[data-open-recipe]');if(card)openRecipeDetail(card.dataset.openRecipe);const day=e.target.closest('[data-week-day]');if(day)openWeekPicker(day.dataset.weekDay);const nav=e.target.closest('[data-nav]');if(nav&&!nav.classList.contains('tab'))navigate(nav.dataset.nav);});
     $('clearWeek').addEventListener('click',async()=>{if(confirm('Alle geplande maaltijden verwijderen?')){state.week={};await persist();renderWeek();showToast('Weekmenu leeggemaakt');}});
     $('weekPickerForm').addEventListener('submit',saveWeekMeal);$('closeWeekPicker').addEventListener('click',()=> $('weekPickerDialog').close());
@@ -447,9 +501,9 @@
   async function init() {
     initTheme();
     bindEvents();
-    try {await openDB();state=await readState();if(!state){state=defaultState();await persist();}}
+    try {await openDB();state=await readState();if(!state){state=await readLegacyState();if(state){state.migratedFrom='mijn-recepten-db';state.version=2;await persist();showToast('Bestaande recepten zijn overgezet naar de testopslag.');}else{state=defaultState();await persist();}}}
     catch(err){console.error(err);showToast('Lokale opslag is niet beschikbaar. Probeer Safari en controleer de website-instellingen.');state=defaultState();}
-    state.recipes=Array.isArray(state.recipes)?state.recipes:[];state.week=state.week||{};state.shopping=Array.isArray(state.shopping)?state.shopping:[];
+    state.recipes=Array.isArray(state.recipes)?state.recipes.map(r=>normalizeRecipeMetadata(r)):[];state.version=2;state.week=state.week||{};state.shopping=Array.isArray(state.shopping)?state.shopping:[];await persist();
     renderAll();
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       let reloadingForUpdate = false;
@@ -458,7 +512,7 @@
         reloadingForUpdate = true;
         window.location.reload();
       });
-      navigator.serviceWorker.register('./sw.js?v=1.8.0', { updateViaCache: 'none' })
+      navigator.serviceWorker.register('./sw.js?v=1.9.2', { updateViaCache: 'none' })
         .then(registration => registration.update())
         .catch(err => console.warn('Service worker niet geregistreerd', err));
       document.addEventListener('visibilitychange', () => {
