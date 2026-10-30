@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.9.4';
+  const APP_VERSION = '1.9.5';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -10,6 +10,28 @@
   const LEGACY_CATEGORY_TAGS = {'Rijst & Bowls':'Rijst & Bowls','Wraps & Flatbreads':'Wraps & Flatbreads','Pasta':'Pasta','Salades':'Salades','Kip':'Kip'};
   const LEGACY_CATEGORY_CUISINES = {'Mexicaans':'Mexicaans'};
   const $ = (id) => document.getElementById(id);
+  // Houd het scherm actief zolang een receptdetail geopend is.
+  let recipeDetailActive = false;
+  let recipeScreenWakeLock = null;
+  async function requestRecipeWakeLock() {
+    if (!recipeDetailActive || document.visibilityState !== 'visible' || !('wakeLock' in navigator)) return;
+    try {
+      if (recipeScreenWakeLock) return;
+      recipeScreenWakeLock = await navigator.wakeLock.request('screen');
+      recipeScreenWakeLock.addEventListener('release', () => { recipeScreenWakeLock = null; });
+    } catch (_) {
+      // Wake Lock is optioneel; de app blijft normaal functioneren als het niet beschikbaar is.
+      recipeScreenWakeLock = null;
+    }
+  }
+  async function releaseRecipeWakeLock() {
+    recipeDetailActive = false;
+    if (recipeScreenWakeLock) {
+      const lock = recipeScreenWakeLock;
+      recipeScreenWakeLock = null;
+      try { await lock.release(); } catch (_) {}
+    }
+  }
   const uid = () => (crypto && crypto.randomUUID) ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2);
   const days = [
     {key:'ma',label:'Maandag',short:'MA'}, {key:'di',label:'Dinsdag',short:'DI'},
@@ -266,6 +288,9 @@
     const ingredients = (r.ingredients||[]).filter(i=>i.name);
     $('recipeDetail').innerHTML = `<div class="detail-cover"><img class="detail-cover-photo" src="${recipePhoto(r)}" alt="${esc(r.name)}" onerror="this.style.display='none'"><div class="detail-cover-shade"></div><button type="button" class="icon-button" id="closeDetail" aria-label="Sluiten">×</button></div><div class="detail-content"><p class="eyebrow">${esc(r.mealMoment || ((r.tags||[]).includes('Mealprep')?'MEALPREP':'RECEPT')).toLocaleUpperCase('nl')}</p><div class="recipe-badges">${r.isKids?'<span class="recipe-badge kids">Kindvriendelijk</span>':''}${r.cuisine?`<span class="recipe-badge">${esc(r.cuisine)}</span>`:''}${(r.tags||[]).map(tag=>`<span class="recipe-badge">${esc(tag)}</span>`).join('')}</div><h2>${esc(r.name)}</h2><p class="muted">${esc(r.description||'Geen omschrijving toegevoegd.')}</p><div class="recipe-meta"><span>◷ ${totalMinutes(r)} min.</span><span>♧ ${r.servings} porties</span><span>${ingredients.length} ingrediënten</span></div><div class="detail-top-actions"><button type="button" class="primary-button" id="detailAddShopping">＋ Boodschappen</button><button type="button" class="secondary-button" id="detailEdit">Bewerken</button></div><div class="detail-section"><h3>Ingrediënten</h3>${ingredients.length?ingredients.map(i=>`<div class="detail-ingredient"><span>${esc(i.name)}</span><span>${esc([i.qty,i.unit].filter(Boolean).join(' '))}</span></div>`).join(''):'<p class="muted">Nog geen ingrediënten ingevuld. Bewerk het recept om ze toe te voegen.</p>'}</div><div class="detail-section"><h3>Bereiding</h3>${r.steps?.length?r.steps.map((s,i)=>`<div class="detail-step"><span class="detail-step-num">${i+1}</span><p>${esc(s.text)}</p></div>`).join(''):'<p class="muted">Nog geen bereidingsstappen toegevoegd.</p>'}</div>${r.notes?`<div class="detail-section"><h3>Eigen notities</h3><p class="muted">${esc(r.notes)}</p></div>`:''}<div class="button-row" style="margin-top:24px"><button type="button" class="secondary-button" id="detailPlan">Plan in weekmenu</button><button type="button" class="danger-button" id="detailDelete">Verwijderen</button></div></div>`;
     $('detailDialog').showModal();
+    recipeDetailActive = true;
+    requestRecipeWakeLock();
+    $('detailDialog').addEventListener('close', releaseRecipeWakeLock, { once: true });
     $('closeDetail').onclick=()=> $('detailDialog').close();
     $('detailEdit').onclick=()=>{ $('detailDialog').close(); openRecipeEditor(r); };
     $('detailAddShopping').onclick=async()=>{addRecipeToShopping(r,r.servings);await persist();$('detailDialog').close();renderAll();navigate('shopping');showToast('Ingrediënten toegevoegd');};
@@ -470,6 +495,7 @@
   document.querySelectorAll('[data-app-version]').forEach(el => { el.textContent = el.closest('.topbar') ? `v${APP_VERSION}` : APP_VERSION; });
 
   function bindEvents() {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && recipeDetailActive) requestRecipeWakeLock(); });
     document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.nav)));
     $('exportBackup').addEventListener('click',makeBackup);
     $('themeToggle').addEventListener('click',()=>applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
@@ -512,7 +538,7 @@
         reloadingForUpdate = true;
         window.location.reload();
       });
-      navigator.serviceWorker.register('./sw.js?v=1.9.4', { updateViaCache: 'none' })
+      navigator.serviceWorker.register('./sw.js?v=1.9.5', { updateViaCache: 'none' })
         .then(registration => registration.update())
         .catch(err => console.warn('Service worker niet geregistreerd', err));
       document.addEventListener('visibilitychange', () => {
