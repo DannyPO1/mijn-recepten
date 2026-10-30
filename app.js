@@ -1,7 +1,7 @@
 (() => {
   'use strict';
-  const APP_VERSION = '1.9.2';
-  const DB_NAME = 'mijn-recepten-test-db';
+  const APP_VERSION = '1.9.3';
+  const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
   const STATE_KEY = 'main';
@@ -501,7 +501,7 @@
   async function init() {
     initTheme();
     bindEvents();
-    try {await openDB();state=await readState();if(!state){state=await readLegacyState();if(state){state.migratedFrom='mijn-recepten-db';state.version=2;await persist();showToast('Bestaande recepten zijn overgezet naar de testopslag.');}else{state=defaultState();await persist();}}}
+    try {await openDB();state=await readState();if(!state){state=await readLegacyState();if(state){state.migratedFrom='mijn-recepten-db';state.version=2;await persist();showToast('Bestaande recepten zijn bijgewerkt.');}else{state=defaultState();await persist();}}}
     catch(err){console.error(err);showToast('Lokale opslag is niet beschikbaar. Probeer Safari en controleer de website-instellingen.');state=defaultState();}
     state.recipes=Array.isArray(state.recipes)?state.recipes.map(r=>normalizeRecipeMetadata(r)):[];state.version=2;state.week=state.week||{};state.shopping=Array.isArray(state.shopping)?state.shopping:[];await persist();
     renderAll();
@@ -512,7 +512,7 @@
         reloadingForUpdate = true;
         window.location.reload();
       });
-      navigator.serviceWorker.register('./sw.js?v=1.9.2', { updateViaCache: 'none' })
+      navigator.serviceWorker.register('./sw.js?v=1.9.3', { updateViaCache: 'none' })
         .then(registration => registration.update())
         .catch(err => console.warn('Service worker niet geregistreerd', err));
       document.addEventListener('visibilitychange', () => {
