@@ -484,3 +484,28 @@ html[data-theme="dark"] .detail-cover { background: #29372b; }
 .recipe-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
 .recipe-badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:99px;background:var(--green-pale);color:var(--green);font-size:9px;font-weight:750}
 .recipe-badge.kids{background:#f7eadc;color:#87552c}
+
+
+/* v1.9.4 — consistent recipe card text alignment */
+.recipe-card { display:flex; flex-direction:column; height:100%; min-width:0; }
+.recipe-card-body { display:flex; flex:1 1 auto; flex-direction:column; min-width:0; }
+.recipe-card-body h3 {
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3;
+  overflow:hidden; min-height:3.45em; max-height:3.45em;
+  line-height:1.15; margin:0 0 9px; overflow-wrap:anywhere;
+}
+.recipe-card-body .recipe-description {
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  overflow:hidden; min-height:2.9em; max-height:2.9em;
+  line-height:1.45; margin:0 0 12px; overflow-wrap:anywhere;
+}
+.recipe-card-body .recipe-meta { margin-top:auto; min-height:1.5em; align-items:center; }
+.recipe-card-body .recipe-badges { min-height:25px; align-content:flex-start; margin-top:9px; }
+.recipe-card-body .recipe-badge { max-width:100%; overflow-wrap:anywhere; }
+@media(max-width:420px) {
+  .recipe-card-body h3 { font-size:17px; }
+  .recipe-card-body { padding:13px; }
+}
+
+/* v1.9.4 — consistent spacing around the child-friendly option */
+.recipe-dialog .kids-toggle, #recipeForm .kids-toggle { margin-bottom: 24px; }
