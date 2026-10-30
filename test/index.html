@@ -11,14 +11,14 @@
   <meta name="description" content="Jouw persoonlijke receptenboek, weekmenu en boodschappenlijst.">
   <title>Mijn Recepten</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=1.9.0">
+  <link rel="stylesheet" href="styles.css?v=1.9.1">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <img class="brand-mark" src="icons/icon-192.png" alt="" aria-hidden="true">
       <div class="brand-copy"><p class="eyebrow">JOUW PERSOONLIJKE KOOKBOEK</p><h1>Mijn Recepten</h1></div>
-      <span class="test-version-stack"><span class="app-version" data-app-version aria-label="Appversie 1.9.0">v1.9.0</span><span class="test-label">TEST</span></span>
+      <span class="test-version-stack"><span class="app-version" data-app-version aria-label="Appversie 1.9.1">v1.9.1</span><span class="test-label">TEST</span></span>
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Donkere modus inschakelen" title="Donkere modus inschakelen"><span id="themeToggleIcon" aria-hidden="true">☾</span></button>
     </header>
 
@@ -97,12 +97,9 @@
       <div class="modal-header"><div><p class="eyebrow">RECEPT BEWERKEN</p><h2 id="recipeDialogTitle">Nieuw recept</h2></div><button type="button" class="icon-button" id="closeRecipe" aria-label="Sluiten">×</button></div>
       <input type="hidden" id="recipeId">
       <label class="field-label">Naam van het gerecht<input id="recipeName" required maxlength="120" placeholder="Bijv. Kip met rijst"></label>
-      <div class="two-columns"><label class="field-label">Categorie<select id="recipeCategory"><option>Avondeten</option><option>Ontbijt</option><option>Lunch</option><option>Mealprep</option><option>Snack</option><option>Kinderen</option><option>Bijgerecht</option><option>Mexicaans</option><option>Rijst &amp; Bowls</option><option>Wraps &amp; Flatbreads</option><option>Pasta</option><option>Salades</option><option>Kip</option><option>Overig</option></select></label><label class="field-label">Porties<input id="recipeServings" type="number" min="1" max="100" value="2" required></label></div>
-      <div class="two-columns">
-        <label class="field-label">Maaltijdmoment<select id="recipeMealMoment"><option value="">Niet opgegeven</option><option>Ontbijt</option><option>Lunch</option><option>Avondeten</option><option>Snack</option><option>Bijgerecht</option></select></label>
-        <label class="field-label">Keuken<select id="recipeCuisine"><option value="">Niet opgegeven</option><option>Nederlands</option><option>Mediterraan</option><option>Mexicaans</option><option>Italiaans</option><option>Marokkaans</option><option>Turks</option><option>Arabisch</option><option>Indiaas</option><option>Aziatisch</option><option>Anders</option></select></label>
-      </div>
-      <label class="field-label">Tags <input id="recipeTags" placeholder="Bijv. vegetarisch, eiwitrijk, snel (komma-gescheiden)"></label>
+      <div class="two-columns"><label class="field-label">Maaltijdmoment<select id="recipeMealMoment"><option value="">Geen maaltijdmoment</option><option>Ontbijt</option><option>Lunch</option><option>Avondeten</option><option>Snack</option><option>Dessert</option><option>Bijgerecht</option></select></label><label class="field-label">Porties<input id="recipeServings" type="number" min="1" max="100" value="2" required></label></div>
+      <label class="field-label">Keuken<select id="recipeCuisine"><option value="">Niet opgegeven</option><option>Nederlands</option><option>Italiaans</option><option>Mexicaans</option><option>Marokkaans</option><option>Aziatisch</option><option>Indonesisch</option><option>Indiaas</option><option>Midden-Oosters</option><option>Internationaal</option></select></label>
+      <label class="field-label">Tags <input id="recipeTags" list="recipeTagOptions" placeholder="Kies of typ tags (komma-gescheiden)"><datalist id="recipeTagOptions"><option value="Kindergerecht"><option value="Mealprep"><option value="Pasta"><option value="Rijst &amp; Bowls"><option value="Wraps &amp; Flatbreads"><option value="Kip"><option value="Salades"><option value="Vegetarisch"><option value="Curry"></datalist><span class="helper-text">Gebruik meerdere tags door ze met komma’s te scheiden.</span></label>
       <label class="kids-toggle"><input id="recipeKids" type="checkbox"><span>Kindvriendelijk recept</span></label>
 
       <div class="two-columns"><label class="field-label">Voorbereiding (min.)<input id="recipePrep" type="number" min="0" max="999" value="10"></label><label class="field-label">Bereiding (min.)<input id="recipeCook" type="number" min="0" max="999" value="20"></label></div>
@@ -128,6 +125,6 @@
   <dialog id="detailDialog" class="modal detail-modal"><div id="recipeDetail"></div></dialog>
   <dialog id="weekPickerDialog" class="modal"><form method="dialog" id="weekPickerForm"><div class="modal-header"><div><p class="eyebrow">WEEKMENU</p><h2>Maaltijd plannen</h2></div><button type="button" class="icon-button" id="closeWeekPicker">×</button></div><input type="hidden" id="weekDayKey"><label class="field-label">Kies een recept<select id="weekRecipeSelect"></select></label><label class="field-label">Aantal personen<input id="weekServings" type="number" min="1" max="100" value="2"></label><div class="button-row modal-actions"><button type="button" class="secondary-button" id="removeWeekMeal">Verwijderen</button><button type="submit" class="primary-button">Opslaan</button></div></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=1.9.0"></script>
+  <script src="app.js?v=1.9.1"></script>
 </body>
 </html>
