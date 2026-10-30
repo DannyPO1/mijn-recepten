@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '2.0.0';
+  const APP_VERSION = '2.0.2';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -299,7 +299,7 @@
       await navigator.clipboard.writeText(json);
       const status = $('calorieTrackerTransferStatus');
       if (status) {
-        status.textContent = '✓ Recept gekopieerd. Open CalorieTracker en tik op ‘Recept ontvangen’.';
+        status.textContent = '✓ Recept gekopieerd. CalorieTracker wordt geopend…';
         status.classList.add('transfer-success');
         status.classList.remove('transfer-error');
         status.setAttribute('role', 'status');
@@ -315,6 +315,10 @@
           }
         }, 3500);
       }
+      // Best-effort deeplink. iOS may open Safari instead of the installed Home Screen web app.
+      setTimeout(() => {
+        window.location.href = 'https://dannypo1.github.io/calorietracker/?action=receive-recipe';
+      }, 450);
     } catch (error) {
       // Fallback voor browsers/iOS-configuraties die klembordschrijven blokkeren.
       const safeName = String(recipe.name || 'recept')
