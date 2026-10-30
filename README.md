@@ -1,3 +1,11 @@
+# Mijn Recepten — v1.9.7 (productie)
+
+## Wijzigingen in v1.9.7
+- Receptdetail-acties staan nu in een tweekolomsindeling; de knop ‘Naar CalorieTracker’ staat op een eigen rij.
+- Voorkomt dat de drie knoppen samen de breedte van het receptdetail overschrijden op iPhone.
+- Productiedatabase blijft `mijn-recepten-db`.
+- Productiecache is vernieuwd naar `mijn-recepten-v1.9.7`.
+
 # Mijn Recepten — v1.9.6 (productie)
 
 ## Wijzigingen in v1.9.6
