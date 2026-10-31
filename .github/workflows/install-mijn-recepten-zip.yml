@@ -42,8 +42,6 @@ jobs:
           if [[ "$EVENT_NAME" == "push" &&
                 "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
 
-            # Alleen toegevoegde of gewijzigde ZIP-bestanden tellen mee.
-            # Verwijderde bestanden worden bewust genegeerd.
             mapfile -t changed_zips < <(
               git diff --diff-filter=AM --name-only \
                 "$BEFORE_SHA" "$CURRENT_SHA" -- 'MijnRecepten-iPhone-v*.zip' |
@@ -52,7 +50,6 @@ jobs:
 
             if [[ ${#changed_zips[@]} -eq 0 ]]; then
               echo "Geen nieuwe of gewijzigde versie-ZIP gevonden."
-              echo "Waarschijnlijk is alleen een ZIP verwijderd."
               echo "Installatie wordt overgeslagen."
               echo "should_install=false" >> "$GITHUB_OUTPUT"
               exit 0
@@ -83,21 +80,31 @@ jobs:
 
           version="${zipfile#MijnRecepten-iPhone-v}"
           version="${version%.zip}"
-          tag="v${version}"
+          base_tag="v${version}"
+          tag="$base_tag"
 
           git fetch --tags origin
 
+          # Bestaande tags nooit overschrijven.
+          # Gebruik bij herinstallatie automatisch een unieke revert-tag.
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "Tag $tag bestaat al. Gebruik een nieuw versienummer."
-            exit 1
+            tag="${base_tag}-revert"
+            suffix=2
+
+            while git rev-parse -q --verify "refs/tags/$tag" >/dev/null; do
+              tag="${base_tag}-revert-${suffix}"
+              suffix=$((suffix + 1))
+            done
           fi
 
           echo "zipfile=$zipfile" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "should_install=true" >> "$GITHUB_OUTPUT"
 
           echo "Geselecteerd: $zipfile"
           echo "Versie: $version"
+          echo "Git-tag: $tag"
 
       - name: Validate and extract ZIP
         if: steps.select_zip.outputs.should_install == 'true'
@@ -213,28 +220,32 @@ jobs:
         if: steps.select_zip.outputs.should_install == 'true'
         shell: bash
         env:
-          VERSION: ${{ steps.select_zip.outputs.version }}
+          TAG: ${{ steps.select_zip.outputs.tag }}
         run: |
           set -euo pipefail
 
-          tag="v${VERSION}"
           git fetch --tags origin
 
-          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "Tag $tag bestaat al."
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG bestaat inmiddels al."
+            echo "Afgebroken om overschrijven te voorkomen."
             exit 1
           fi
 
-          git tag -a "$tag" -m "Mijn Recepten $tag"
-          git push origin "$tag"
+          git tag -a "$TAG" -m "Mijn Recepten $TAG"
+          git push origin "$TAG"
 
       - name: Rapportage
         if: always()
         env:
           SHOULD_INSTALL: ${{ steps.select_zip.outputs.should_install }}
+          VERSION: ${{ steps.select_zip.outputs.version }}
+          TAG: ${{ steps.select_zip.outputs.tag }}
         run: |
           if [[ "$SHOULD_INSTALL" == "true" ]]; then
             echo "Productie-installatie uitgevoerd."
+            echo "Versie: $VERSION"
+            echo "Git-tag: $TAG"
             echo "Appbestanden en fotobibliotheek zijn bijgewerkt."
           else
             echo "Geen nieuwe versie-ZIP om te installeren."
