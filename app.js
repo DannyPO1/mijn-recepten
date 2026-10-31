@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '2.0.0';
+  const APP_VERSION = '2.0.3';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
