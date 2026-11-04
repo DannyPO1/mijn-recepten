@@ -1,7 +1,7 @@
-# Mijn Recepten v2.0.3
+# Mijn Recepten v2.0.4
 
 ## Releasenotes
-- Versienummer in de gebruikersinterface gecorrigeerd naar v2.0.3.
+- Versienummer in de gebruikersinterface gecorrigeerd naar v2.0.4.
 - De werkende klembordoverdracht naar CalorieTracker en de zichtbare kopieerbevestiging uit v2.0.1 blijven behouden.
 - Deeplink-automatisering is niet opgenomen; de app opent CalorieTracker niet automatisch.
 

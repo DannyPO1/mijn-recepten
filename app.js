@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '2.0.3';
+  const APP_VERSION = '2.0.4';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -361,7 +361,9 @@
     }).join('');
   }
   function openWeekPicker(dayKey, recipeId='') {
+    // De dag is ook verplicht zichtbaar en instelbaar wanneer de planner vanuit een recept opent.
     $('weekDayKey').value=dayKey||'';
+    $('weekDaySelect').value=dayKey||'';
     $('weekRecipeSelect').innerHTML='<option value="">Selecteer een recept…</option>'+state.recipes.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');
     const current = dayKey ? state.week[dayKey] : null;
     $('weekRecipeSelect').value=recipeId || current?.recipeId || '';
@@ -370,7 +372,10 @@
     $('weekPickerDialog').showModal();
   }
   async function saveWeekMeal(event) {
-    event.preventDefault(); const key=$('weekDayKey').value; const recipeId=$('weekRecipeSelect').value; if(!key){showToast('Kies eerst een dag in het weekmenu.');return;}
+    event.preventDefault();
+    const key=$('weekDaySelect').value || $('weekDayKey').value;
+    const recipeId=$('weekRecipeSelect').value;
+    if(!key){showToast('Kies eerst een dag voor deze maaltijd.');$('weekDaySelect').focus();return;}
     if(recipeId) state.week[key]={recipeId,servings:Math.max(1,Number($('weekServings').value)||1)}; else delete state.week[key];
     await persist();$('weekPickerDialog').close();renderWeek();renderHome();showToast('Weekmenu bijgewerkt');
   }
@@ -566,6 +571,7 @@
     $('categoryFilters').addEventListener('click',e=>{const b=e.target.closest('[data-meal-moment]');if(!b)return;activeMealMoment=b.dataset.mealMoment;renderRecipes();});
     document.body.addEventListener('click',e=>{const card=e.target.closest('[data-open-recipe]');if(card)openRecipeDetail(card.dataset.openRecipe);const day=e.target.closest('[data-week-day]');if(day)openWeekPicker(day.dataset.weekDay);const nav=e.target.closest('[data-nav]');if(nav&&!nav.classList.contains('tab'))navigate(nav.dataset.nav);});
     $('clearWeek').addEventListener('click',async()=>{if(confirm('Alle geplande maaltijden verwijderen?')){state.week={};await persist();renderWeek();showToast('Weekmenu leeggemaakt');}});
+    $('weekDaySelect').addEventListener('change',()=>{$('weekDayKey').value=$('weekDaySelect').value;});
     $('weekPickerForm').addEventListener('submit',saveWeekMeal);$('closeWeekPicker').addEventListener('click',()=> $('weekPickerDialog').close());
     $('removeWeekMeal').addEventListener('click',async()=>{const key=$('weekDayKey').value;if(key)delete state.week[key];await persist();$('weekPickerDialog').close();renderWeek();showToast('Maaltijd verwijderd');});
     $('makeWeekList').addEventListener('click',createWeekShopping);
