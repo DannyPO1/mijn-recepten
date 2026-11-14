@@ -1,4 +1,4 @@
-# Mijn Recepten v2.0.5
+# Mijn Recepten v2.0.6
 
 ## Releasenotes
 - Bereidingsstappen zijn nu te herschikken door de sleepgreep links van het stapnummer vast te houden en te slepen.

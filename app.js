@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '2.0.5';
+  const APP_VERSION = '2.0.6';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -255,33 +255,53 @@
       renumberSteps();
     }));
     const handle=row.querySelector('.step-drag-handle');
-    handle.addEventListener('pointerdown', event => {
-      if(event.pointerType==='mouse' && event.button!==0)return;
-      event.preventDefault();
+    // Pointer events op documentniveau blijven ook werken wanneer de vinger
+    // buiten het sleepicoon komt. Geen pointer capture: dat is op iOS Safari
+    // niet in alle situaties betrouwbaar bij dynamisch verplaatsen van DOM-nodes.
+    let dragging = false;
+    let pointerId = null;
+    const move = e => {
+      if (!dragging || (pointerId !== null && e.pointerId !== pointerId) || !row.isConnected) return;
+      e.preventDefault();
       const editor=$('stepEditor');
+      const rows=[...editor.querySelectorAll('.step-row:not(.is-dragging)')];
+      let before=null;
+      for(const target of rows){
+        const rect=target.getBoundingClientRect();
+        if(e.clientY < rect.top + rect.height/2){ before=target; break; }
+      }
+      if(before) {
+        if(row.nextElementSibling !== before) editor.insertBefore(row,before);
+      } else if(row !== editor.lastElementChild) {
+        editor.appendChild(row);
+      }
+      renumberSteps();
+
+      // Scroll de modal mee wanneer je een stap naar de boven- of onderrand sleept.
+      const dialog=$('recipeDialog');
+      const bounds=dialog.getBoundingClientRect();
+      if(e.clientY < bounds.top + 70) dialog.scrollTop -= 12;
+      else if(e.clientY > bounds.bottom - 70) dialog.scrollTop += 12;
+    };
+    const finish = e => {
+      if(!dragging || (pointerId !== null && e.pointerId !== pointerId)) return;
+      dragging=false;
+      pointerId=null;
+      row.classList.remove('is-dragging');
+      document.removeEventListener('pointermove',move);
+      document.removeEventListener('pointerup',finish);
+      document.removeEventListener('pointercancel',finish);
+      renumberSteps();
+    };
+    handle.addEventListener('pointerdown', e => {
+      if(e.pointerType==='mouse' && e.button!==0)return;
+      e.preventDefault();
+      dragging=true;
+      pointerId=e.pointerId;
       row.classList.add('is-dragging');
-      handle.setPointerCapture?.(event.pointerId);
-      const move = e => {
-        if(!row.isConnected)return;
-        const rows=[...editor.querySelectorAll('.step-row:not(.is-dragging)')];
-        let placed=false;
-        for(const target of rows){
-          const rect=target.getBoundingClientRect();
-          if(e.clientY < rect.top + rect.height/2){ editor.insertBefore(row,target); placed=true; break; }
-        }
-        if(!placed)editor.appendChild(row);
-        renumberSteps();
-      };
-      const finish = () => {
-        row.classList.remove('is-dragging');
-        handle.removeEventListener('pointermove',move);
-        handle.removeEventListener('pointerup',finish);
-        handle.removeEventListener('pointercancel',finish);
-        renumberSteps();
-      };
-      handle.addEventListener('pointermove',move);
-      handle.addEventListener('pointerup',finish);
-      handle.addEventListener('pointercancel',finish);
+      document.addEventListener('pointermove',move,{passive:false});
+      document.addEventListener('pointerup',finish);
+      document.addEventListener('pointercancel',finish);
     });
     $('stepEditor').appendChild(row);
     renumberSteps();
