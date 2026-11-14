@@ -1,10 +1,12 @@
-# Mijn Recepten v2.0.4
+# Mijn Recepten v2.0.5
 
 ## Releasenotes
-- Versienummer in de gebruikersinterface gecorrigeerd naar v2.0.4.
-- De werkende klembordoverdracht naar CalorieTracker en de zichtbare kopieerbevestiging uit v2.0.1 blijven behouden.
-- Deeplink-automatisering is niet opgenomen; de app opent CalorieTracker niet automatisch.
+- Bereidingsstappen zijn nu te herschikken door de sleepgreep links van het stapnummer vast te houden en te slepen.
+- Stapnummers worden automatisch bijgewerkt na verplaatsen, toevoegen en verwijderen.
+- Omhoog- en omlaagknoppen zijn toegevoegd als alternatief voor slepen.
+- Bestaande recepten, gegevensopslag, import/export en overige functionaliteit blijven behouden.
 
-## Bijzonderheden
-- Na het kopiëren open je CalorieTracker zelf en tik je op **Recept ontvangen**.
-- Bestaande recepten en gegevensopslag blijven ongewijzigd.
+## Gebruik
+- Open een recept om het te bewerken.
+- Houd het sleepicoon (⠿) links van een bereidingsstap vast en sleep de stap naar de gewenste positie.
+- Gebruik eventueel de pijltjes rechts om een stap één positie te verplaatsen.

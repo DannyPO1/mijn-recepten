@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '2.0.4';
+  const APP_VERSION = '2.0.5';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
@@ -246,11 +246,47 @@
   }
   function addStepRow(item={}) {
     const row = document.createElement('div'); row.className = 'step-row';
-    row.innerHTML = `<span class="step-number">${$('stepEditor').children.length+1}</span><textarea class="step-text" rows="2" placeholder="Beschrijf deze stap…">${esc(item.text||'')}</textarea><button type="button" class="remove-row" aria-label="Stap verwijderen">×</button>`;
+    row.innerHTML = `<button type="button" class="step-drag-handle" aria-label="Stap slepen" title="Houd vast om te slepen">⠿</button><span class="step-number">${$('stepEditor').children.length+1}</span><textarea class="step-text" rows="2" placeholder="Beschrijf deze stap…">${esc(item.text||'')}</textarea><div class="step-row-actions"><button type="button" class="step-move" data-direction="-1" aria-label="Stap omhoog" title="Omhoog">↑</button><button type="button" class="step-move" data-direction="1" aria-label="Stap omlaag" title="Omlaag">↓</button><button type="button" class="remove-row" aria-label="Stap verwijderen">×</button></div>`;
     row.querySelector('.remove-row').addEventListener('click',()=>{row.remove();if(!$('stepEditor').children.length)addStepRow();renumberSteps();});
+    row.querySelectorAll('.step-move').forEach(button=>button.addEventListener('click',()=>{
+      const direction=Number(button.dataset.direction), editor=$('stepEditor'), sibling=direction<0?row.previousElementSibling:row.nextElementSibling;
+      if(!sibling)return;
+      if(direction<0)editor.insertBefore(row,sibling); else editor.insertBefore(sibling,row);
+      renumberSteps();
+    }));
+    const handle=row.querySelector('.step-drag-handle');
+    handle.addEventListener('pointerdown', event => {
+      if(event.pointerType==='mouse' && event.button!==0)return;
+      event.preventDefault();
+      const editor=$('stepEditor');
+      row.classList.add('is-dragging');
+      handle.setPointerCapture?.(event.pointerId);
+      const move = e => {
+        if(!row.isConnected)return;
+        const rows=[...editor.querySelectorAll('.step-row:not(.is-dragging)')];
+        let placed=false;
+        for(const target of rows){
+          const rect=target.getBoundingClientRect();
+          if(e.clientY < rect.top + rect.height/2){ editor.insertBefore(row,target); placed=true; break; }
+        }
+        if(!placed)editor.appendChild(row);
+        renumberSteps();
+      };
+      const finish = () => {
+        row.classList.remove('is-dragging');
+        handle.removeEventListener('pointermove',move);
+        handle.removeEventListener('pointerup',finish);
+        handle.removeEventListener('pointercancel',finish);
+        renumberSteps();
+      };
+      handle.addEventListener('pointermove',move);
+      handle.addEventListener('pointerup',finish);
+      handle.addEventListener('pointercancel',finish);
+    });
     $('stepEditor').appendChild(row);
+    renumberSteps();
   }
-  function renumberSteps() { [...$('stepEditor').children].forEach((r,i)=>r.querySelector('.step-number').textContent=i+1); }
+  function renumberSteps() { [...$('stepEditor').children].forEach((r,i)=>{r.querySelector('.step-number').textContent=i+1; r.querySelectorAll('.step-move').forEach(b=>b.disabled=(b.dataset.direction==='-1'?i===0:i=== $('stepEditor').children.length-1));}); }
   async function imageFileToDataUrl(file) {
     if (!file) return null;
     if (!file.type.startsWith('image/')) throw new Error('Kies een afbeeldingsbestand.');
