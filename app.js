@@ -1,10 +1,13 @@
 (() => {
   'use strict';
-  const APP_VERSION = '2.0.6';
+  const APP_VERSION = '2.1.0';
   const DB_NAME = 'mijn-recepten-db';
   const DB_VERSION = 1;
   const STORE = 'appState';
   const STATE_KEY = 'main';
+  let touchDragItemId = null;
+  let touchDragTimer = null;
+  let touchDragStarted = false;
   const MEAL_MOMENTS = ['Ontbijt','Lunch','Avondeten','Snack','Dessert','Bijgerecht'];
   const CUISINES = ['Nederlands','Italiaans','Mexicaans','Marokkaans','Aziatisch','Indonesisch','Indiaas','Midden-Oosters','Internationaal'];
   const LEGACY_CATEGORY_TAGS = {'Rijst & Bowls':'Rijst & Bowls','Wraps & Flatbreads':'Wraps & Flatbreads','Pasta':'Pasta','Salades':'Salades','Kip':'Kip'};
@@ -463,12 +466,26 @@
     });
     return items.map(i=>({...i,displayQty:i.qty===null?'':formatQty(i.qty)}));
   }
+  const SHOPPING_GROUPS = [
+    'Groente & fruit',
+    'Vlees, vis & eieren',
+    'Zuivel',
+    'Granen & brood',
+    'Kruiden & specerijen',
+    'Conserven & potten',
+    'Noten & zaden',
+    'Overig'
+  ];
   function guessGroup(name) {
     const n=normalizeName(name);
-    if(/kip|kipfilet|gehakt|rund|vlees|ei|eieren|vis|zalm/.test(n))return 'Vlees, vis & eieren';
-    if(/ui|knoflook|paprika|tomaat|sla|wortel|komkommer|courgette|groente|citroen|limoen|banaan|aardappel|koriander|peterselie|spinazie/.test(n))return 'Groente & fruit';
-    if(/rijst|pasta|wrap|flatbread|brood|havermout|bloem|meel|noedel|couscous/.test(n))return 'Granen & brood';
-    if(/melk|yoghurt|kaas|room|boter/.test(n))return 'Zuivel';
+    // Match more specific ingredient families before broad terms.
+    if(/\b(kip|kipfilet|kippendij|gehakt|rundvlees|rundergehakt|biefstuk|varkensvlees|lamsvlees|spek|ham|worst|kipworst|kalkoen|vis|zalm|tonijn|garnalen|gamba|kabeljauw|ei|eieren)\b/.test(n))return 'Vlees, vis & eieren';
+    if(/\b(melk|kookroom|slagroom|creme fraiche|creme|yoghurt|kwark|kaas|parmezaan|parmezaanse kaas|mozzarella| feta|cheddar|ricotta|mascarpone|boter|roomkaas)\b/.test(n))return 'Zuivel';
+    if(/\b(penne|fusilli|pasta|spaghetti|macaroni|rijst|noedel|noedels|couscous|quinoa|bulgur|havermout|bloem|meel|paneermeel|wrap|tortilla|brood|stokbrood|pita|naan|croutons)\b/.test(n))return 'Granen & brood';
+    if(/\b(rucola|spinazie|broccoli|bloemkool|courgette|aubergine|paprika|tomaat|cherrytomaat|ui|rode ui|bosui|knoflook|sla|ijsbergsla|wortel|komkommer|champignon|champignons|prei|sperziebonen|doperwten|mais|maïs|avocado|citroen|limoen|banaan|appel|peer|aardbei|blauwe bes|aardappel|zoete aardappel|koriander|peterselie|basilicum)\b/.test(n))return 'Groente & fruit';
+    if(/\b(peper|zout|paprikapoeder|chilipoeder|komijn|kerrie|kurkuma|oregano|tijm|rozemarijn|kaneel|nootmuskaat|kruiden|specerijen|sambal)\b/.test(n))return 'Kruiden & specerijen';
+    if(/\b(pesto|tomatenblokjes|passata|tomatenpuree|kikkererwten|linzen|bonen|kidneybonen|witte bonen|zwarte bonen|olijven|kappertjes|augurken|kokosmelk|bouillon|conserven)\b/.test(n))return 'Conserven & potten';
+    if(/\b(pijnboompitten|walnoten|amandelen|cashewnoten|hazelnoten|noten|zaden|sesamzaad|chiazaad|lijnzaad|pompoenpitten|zonnebloempitten)\b/.test(n))return 'Noten & zaden';
     return 'Overig';
   }
   function seedLegacySourceDetails(item) {
@@ -504,9 +521,9 @@
     });
   }
   function renderShopping() {
-    const groups={};state.shopping.forEach(i=>(groups[i.group||'Overig']??=[]).push(i));
-    const keys=Object.keys(groups).sort((a,b)=>['Groente & fruit','Vlees, vis & eieren','Zuivel','Granen & brood','Overig'].indexOf(a)-['Groente & fruit','Vlees, vis & eieren','Zuivel','Granen & brood','Overig'].indexOf(b));
-    $('shoppingItems').innerHTML=state.shopping.length?keys.map(group=>`<div class="shopping-group"><h3>${esc(group)}</h3>${groups[group].map(i=>`<label class="shopping-item ${i.checked?'done':''}"><input type="checkbox" data-check-item="${esc(i.id)}" ${i.checked?'checked':''}><span class="item-name">${esc(i.name)}</span><span class="item-qty">${esc([i.qty===null?'':formatQty(i.qty),i.unit].filter(Boolean).join(' '))}</span><button type="button" data-delete-item="${esc(i.id)}" aria-label="Verwijder ${esc(i.name)}">×</button></label>`).join('')}</div>`).join(''):`<div class="empty-state"><div class="empty-icon">☷</div><h3>Je lijst is nog leeg</h3><p>Voeg een artikel toe of genereer boodschappen vanuit je weekmenu.</p><button class="secondary-button" data-nav="week">Naar weekmenu</button></div>`;
+    const groups={};state.shopping.forEach(i=>(groups[i.group||guessGroup(i.name)||'Overig']??=[]).push(i));
+    const keys=SHOPPING_GROUPS.filter(group=>groups[group]?.length).concat(Object.keys(groups).filter(group=>!SHOPPING_GROUPS.includes(group)).sort());
+    $('shoppingItems').innerHTML=state.shopping.length?keys.map(group=>`<div class="shopping-group" data-drop-group="${esc(group)}"><h3>${esc(group)}</h3>${groups[group].map(i=>`<div class="shopping-item ${i.checked?'done':''}" data-shopping-row="${esc(i.id)}" draggable="true"><input type="checkbox" data-check-item="${esc(i.id)}" aria-label="Afvinken: ${esc(i.name)}" ${i.checked?'checked':''}><span class="item-name">${esc(i.name)}</span><span class="item-qty">${esc([i.qty===null?'':formatQty(i.qty),i.unit].filter(Boolean).join(' '))}</span><select class="shopping-category-select" data-category-item="${esc(i.id)}" aria-label="Categorie voor ${esc(i.name)}">${SHOPPING_GROUPS.map(g=>`<option value="${esc(g)}" ${g===(i.group||guessGroup(i.name))?'selected':''}>${esc(g)}</option>`).join('')}</select><button type="button" data-delete-item="${esc(i.id)}" aria-label="Verwijder ${esc(i.name)}">×</button></div>`).join('')}</div>`).join(''):`<div class="empty-state"><div class="empty-icon">☷</div><h3>Je lijst is nog leeg</h3><p>Voeg een artikel toe of genereer boodschappen vanuit je weekmenu.</p><button class="secondary-button" data-nav="week">Naar weekmenu</button></div>`;
     $('shoppingTotal').textContent=state.shopping.length;$('shoppingDone').textContent=state.shopping.filter(i=>i.checked).length;
   }
   function shoppingText() {
@@ -632,8 +649,45 @@
     $('removeWeekMeal').addEventListener('click',async()=>{const key=$('weekDayKey').value;if(key)delete state.week[key];await persist();$('weekPickerDialog').close();renderWeek();showToast('Maaltijd verwijderd');});
     $('makeWeekList').addEventListener('click',createWeekShopping);
     $('clearShopping').addEventListener('click',async()=>{if(confirm('De volledige boodschappenlijst wissen?')){state.shopping=[];await persist();renderShopping();renderHome();showToast('Boodschappenlijst gewist');}});
-    $('shoppingItems').addEventListener('change',async e=>{const cb=e.target.closest('[data-check-item]');if(!cb)return;const item=state.shopping.find(i=>i.id===cb.dataset.checkItem);if(item)item.checked=cb.checked;await persist();renderShopping();renderHome();});
+    $('shoppingItems').addEventListener('change',async e=>{
+      const cb=e.target.closest('[data-check-item]');
+      if(cb){const item=state.shopping.find(i=>i.id===cb.dataset.checkItem);if(item)item.checked=cb.checked;await persist();renderShopping();renderHome();return;}
+      const select=e.target.closest('[data-category-item]');
+      if(select){const item=state.shopping.find(i=>i.id===select.dataset.categoryItem);if(item){item.group=select.value;item.categoryManual=true;await persist();renderShopping();showToast('Categorie aangepast');}}
+    });
     $('shoppingItems').addEventListener('click',async e=>{const b=e.target.closest('[data-delete-item]');if(!b)return;state.shopping=state.shopping.filter(i=>i.id!==b.dataset.deleteItem);await persist();renderShopping();renderHome();});
+    $('shoppingItems').addEventListener('dragstart',e=>{const row=e.target.closest('[data-shopping-row]');if(!row)return;e.dataTransfer.setData('text/plain',row.dataset.shoppingRow);e.dataTransfer.effectAllowed='move';row.classList.add('is-dragging');});
+    $('shoppingItems').addEventListener('dragend',e=>{e.target.closest('[data-shopping-row]')?.classList.remove('is-dragging');document.querySelectorAll('.shopping-group.is-drop-target').forEach(el=>el.classList.remove('is-drop-target'));});
+    $('shoppingItems').addEventListener('dragover',e=>{const group=e.target.closest('[data-drop-group]');if(!group)return;e.preventDefault();e.dataTransfer.dropEffect='move';group.classList.add('is-drop-target');});
+    $('shoppingItems').addEventListener('dragleave',e=>{const group=e.target.closest('[data-drop-group]');if(group&&!group.contains(e.relatedTarget))group.classList.remove('is-drop-target');});
+    $('shoppingItems').addEventListener('drop',async e=>{const group=e.target.closest('[data-drop-group]');if(!group)return;e.preventDefault();const id=e.dataTransfer.getData('text/plain');const item=state.shopping.find(i=>i.id===id);if(item){item.group=group.dataset.dropGroup;item.categoryManual=true;await persist();renderShopping();showToast('Artikel verplaatst');}});
+    // Touchvriendelijk slepen op iPhone/iPad: houd een artikel kort ingedrukt en sleep naar een categorie.
+    $('shoppingItems').addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='touch')return;
+      const row=e.target.closest('[data-shopping-row]');if(!row||e.target.closest('button,select,input'))return;
+      touchDragItemId=row.dataset.shoppingRow;touchDragStarted=false;
+      clearTimeout(touchDragTimer);
+      touchDragTimer=setTimeout(()=>{touchDragStarted=true;row.classList.add('is-dragging');},320);
+    });
+    $('shoppingItems').addEventListener('pointermove',e=>{
+      if(!touchDragItemId||!touchDragStarted)return;
+      e.preventDefault();
+      document.querySelectorAll('.shopping-group.is-drop-target').forEach(el=>el.classList.remove('is-drop-target'));
+      const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-drop-group]');
+      if(target)target.classList.add('is-drop-target');
+    },{passive:false});
+    async function finishTouchShoppingDrag(e){
+      clearTimeout(touchDragTimer);
+      if(touchDragItemId&&touchDragStarted){
+        const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-drop-group]');
+        const item=state.shopping.find(i=>i.id===touchDragItemId);
+        if(target&&item){item.group=target.dataset.dropGroup;item.categoryManual=true;await persist();renderShopping();showToast('Artikel verplaatst');}
+      }
+      document.querySelectorAll('.shopping-item.is-dragging,.shopping-group.is-drop-target').forEach(el=>el.classList.remove('is-dragging','is-drop-target'));
+      touchDragItemId=null;touchDragStarted=false;
+    }
+    $('shoppingItems').addEventListener('pointerup',finishTouchShoppingDrag);
+    $('shoppingItems').addEventListener('pointercancel',finishTouchShoppingDrag);
     $('addManualItem').addEventListener('click',addManualShopping);$('manualItem').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addManualShopping();}});$('shareShopping').addEventListener('click',shareShopping);
     $('importFile').addEventListener('change',e=>handleImport(e.target.files?.[0]));$('mergeImport').addEventListener('click',()=>doImport('merge'));$('replaceImport').addEventListener('click',()=>doImport('replace'));
     $('recipeImportFile').addEventListener('change',e=>handleRecipeImport(e.target.files?.[0]));$('importNewRecipes').addEventListener('click',()=>doRecipeImport(false));$('updateImportedRecipes').addEventListener('click',()=>doRecipeImport(true));

@@ -521,3 +521,13 @@ html[data-theme="dark"] .detail-cover { background: #29372b; }
   .step-drag-handle{width:22px}
   .step-row-actions button{width:30px}
 }
+
+/* Mijn Recepten 2.1.0 — handmatig categoriseren en slepen */
+.shopping-category-select{max-width:112px;min-width:0;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--muted);font-size:10px;padding:5px 3px}
+.shopping-item{cursor:grab}
+.shopping-item:active{cursor:grabbing}
+.shopping-item.is-dragging{opacity:.45}
+.shopping-group.is-drop-target{outline:2px dashed var(--green);outline-offset:2px;background:var(--green-pale)}
+@media(max-width:420px){.shopping-category-select{max-width:94px;font-size:9px;padding:5px 1px}.shopping-item{gap:7px}}
+
+.shopping-item{touch-action:pan-y}.shopping-item.is-dragging{opacity:.4;outline:1px dashed var(--green)}
