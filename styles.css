@@ -531,3 +531,18 @@ html[data-theme="dark"] .detail-cover { background: #29372b; }
 @media(max-width:420px){.shopping-category-select{max-width:94px;font-size:9px;padding:5px 1px}.shopping-item{gap:7px}}
 
 .shopping-item{touch-action:pan-y}.shopping-item.is-dragging{opacity:.4;outline:1px dashed var(--green)}
+
+/* Weekmenu v2.2.0: meerdere gerechten per dag en vrije gerechten */
+.week-day { align-items: start; grid-template-columns:56px minmax(0,1fr); }
+.week-meals-list { min-width:0; display:flex; flex-direction:column; gap:8px; }
+.week-planned-item,.week-empty { min-width:0; display:flex; align-items:center; gap:9px; padding:7px; border-radius:13px; background:var(--bg); }
+.week-planned-item { cursor:grab; }
+.week-planned-item.is-dragging { opacity:.45; }
+.week-planned-item.drop-target { outline:2px dashed var(--green); }
+.week-planned-item .week-recipe-thumb { flex:0 0 54px; width:54px; height:52px; }
+.week-custom-thumb { flex:0 0 44px; width:44px; height:44px; display:grid; place-items:center; border-radius:11px; background:var(--green-pale); color:var(--green); font-size:22px; }
+.week-edit { flex:0 0 30px; width:30px; height:32px; border:0; border-radius:9px; background:var(--surface); color:var(--green); font-size:21px; }
+.week-drag { color:var(--muted); font-size:18px; cursor:grab; }
+.week-add-inline { align-self:flex-start; border:0; background:transparent; color:var(--green); font-weight:700; font-size:11px; padding:7px 4px; }
+.week-meal-copy strong { display:block; overflow-wrap:anywhere; }
+@media(max-width:420px){.week-day{grid-template-columns:42px minmax(0,1fr);}.week-day>.day-label{grid-row:1;min-height:48px}.week-meals-list{grid-column:2}.week-planned-item .week-recipe-thumb{flex-basis:46px;width:46px;height:46px}.week-drag{display:none}}

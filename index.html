@@ -11,7 +11,7 @@
   <meta name="description" content="Jouw persoonlijke receptenboek, weekmenu en boodschappenlijst.">
   <title>Mijn Recepten</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=2.1.0">
+  <link rel="stylesheet" href="styles.css?v=2.2.0">
 </head>
 <body>
   <div class="app-shell">
@@ -123,8 +123,8 @@
   </dialog>
 
   <dialog id="detailDialog" class="modal detail-modal"><div id="recipeDetail"></div></dialog>
-  <dialog id="weekPickerDialog" class="modal"><form method="dialog" id="weekPickerForm"><div class="modal-header"><div><p class="eyebrow">WEEKMENU</p><h2>Maaltijd plannen</h2></div><button type="button" class="icon-button" id="closeWeekPicker">×</button></div><input type="hidden" id="weekDayKey"><label class="field-label">Kies een dag<select id="weekDaySelect" required><option value="">Selecteer een dag…</option><option value="ma">Maandag</option><option value="di">Dinsdag</option><option value="wo">Woensdag</option><option value="do">Donderdag</option><option value="vr">Vrijdag</option><option value="za">Zaterdag</option><option value="zo">Zondag</option></select></label><label class="field-label">Kies een recept<select id="weekRecipeSelect"></select></label><label class="field-label">Aantal personen<input id="weekServings" type="number" min="1" max="100" value="2"></label><div class="button-row modal-actions"><button type="button" class="secondary-button" id="removeWeekMeal">Verwijderen</button><button type="submit" class="primary-button">Opslaan</button></div></form></dialog>
+  <dialog id="weekPickerDialog" class="modal"><form method="dialog" id="weekPickerForm"><div class="modal-header"><div><p class="eyebrow">WEEKMENU</p><h2>Gerecht plannen</h2></div><button type="button" class="icon-button" id="closeWeekPicker">×</button></div><input type="hidden" id="weekDayKey"><input type="hidden" id="weekMealId"><label class="field-label">Kies een dag<select id="weekDaySelect" required><option value="">Selecteer een dag…</option><option value="ma">Maandag</option><option value="di">Dinsdag</option><option value="wo">Woensdag</option><option value="do">Donderdag</option><option value="vr">Vrijdag</option><option value="za">Zaterdag</option><option value="zo">Zondag</option></select></label><label class="field-label">Wat wil je toevoegen?<select id="weekEntryType"><option value="recipe">Een bestaand recept</option><option value="custom">Een vrij gerecht (zonder recept)</option></select></label><label class="field-label" id="weekRecipeField">Kies een recept<select id="weekRecipeSelect"></select></label><label class="field-label hidden" id="weekCustomField">Naam van het gerecht<input id="weekCustomName" type="text" maxlength="100" placeholder="Bijv. diepvriespizza of afhalen"></label><label class="field-label">Type gerecht<select id="weekMealType"><option>Hoofdgerecht</option><option>Bijgerecht</option><option>Ontbijt</option><option>Lunch</option><option>Dessert</option><option>Snack</option><option>Overig</option></select></label><label class="field-label" id="weekServingsField">Aantal personen<input id="weekServings" type="number" min="1" max="100" value="2"></label><div class="button-row modal-actions"><button type="button" class="secondary-button" id="removeWeekMeal">Verwijderen</button><button type="submit" class="primary-button">Opslaan</button></div></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=2.1.0"></script>
+  <script src="app.js?v=2.2.0"></script>
 </body>
 </html>
